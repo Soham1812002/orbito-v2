@@ -5,6 +5,8 @@ import { AppLayout } from "../components/layout/AppLayout";
 
 // Lazy-loaded pages for optimized code-splitting
 const SignInPage = lazy(() => import("../pages/auth/SignInPage"));
+const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage"));
+const LinkConfirmationPage = lazy(() => import("../pages/auth/LinkConfirmationPage"));
 const DashboardPage = lazy(() => import("../pages/dashboard/DashboardPage"));
 const UsersPage = lazy(() => import("../pages/users"));
 const UnauthorizedPage = lazy(() => import("../pages/unauthorized/UnauthorizedPage"));
@@ -15,6 +17,16 @@ export const routes: AppRoute[] = [
     path: "/sign-in",
     element: <SignInPage />,
     meta: { title: "Sign In", hideFromMenu: true }
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
+    meta: { title: "Forgot Password", hideFromMenu: true }
+  },
+  {
+    path: "/link-confirmation",
+    element: <LinkConfirmationPage />,
+    meta: { title: "Reset Link Sent", hideFromMenu: true }
   },
   {
     path: "/",

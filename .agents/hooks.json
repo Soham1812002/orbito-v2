@@ -1,0 +1,10 @@
+{
+  "ui-implementation-guard": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./scripts/ui-skills-hook.sh"
+      }
+    ]
+  }
+}

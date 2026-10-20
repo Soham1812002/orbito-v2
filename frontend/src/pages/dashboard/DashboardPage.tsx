@@ -12,6 +12,7 @@ import {
   GitBranch
 } from "lucide-react";
 import { useAppSelector } from "../../redux/hooks";
+import { PageHeader } from "../../components/layout/PageHeader";
 
 export const DashboardPage: React.FC = () => {
   const { currentUser } = useAppSelector((state) => state.user);
@@ -72,6 +73,17 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <PageHeader
+        breadcrumbs={[
+          { label: "Home", href: "/dashboard" },
+          { label: "Dashboard" }
+        ]}
+        title="Fleet Operations Overview"
+        badge="Live Telematics"
+        badgeVariant="cyan"
+        description="Real-time telematics, vehicle utilization, server health, and platform governance overview."
+      />
+
       {/* Welcome Hero Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-8 text-white shadow-xl">
         <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl" />

@@ -10,6 +10,8 @@ import { User } from "./Entity.types";
 import { useAppSelector } from "../../redux/hooks";
 import { hasPermission } from "../../utils/permissions";
 
+import { PageHeader } from "../../components/layout/PageHeader";
+
 export const EntityList: React.FC = () => {
   const { currentUser } = useAppSelector((state) => state.user);
 
@@ -89,30 +91,29 @@ export const EntityList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            User Directory
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Manage user accounts, roles, access permissions, and session records.
-          </p>
-        </div>
-
-        {canCreate && (
-          <Button
-            onClick={() => {
-              setSelectedUser(null);
-              setFormMode("create");
-              setFormOpen(true);
-            }}
-            leftIcon={<UserPlus className="h-4 w-4" />}
-          >
-            Add New User
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        breadcrumbs={[
+          { label: "System Config", href: "/system-config" },
+          { label: "User Management" }
+        ]}
+        title="User Overview"
+        badge={data?.total ? `${data.total} USERS` : undefined}
+        description="Review user accounts, application access, and recent sign-in activity across your fleet organization."
+        actions={
+          canCreate ? (
+            <Button
+              onClick={() => {
+                setSelectedUser(null);
+                setFormMode("create");
+                setFormOpen(true);
+              }}
+              leftIcon={<UserPlus className="h-4 w-4" />}
+            >
+              Add New User
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Filter Bar */}
       <div className="flex items-center gap-2">
