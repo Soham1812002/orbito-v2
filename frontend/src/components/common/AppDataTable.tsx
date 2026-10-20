@@ -1,8 +1,10 @@
 import React from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, GridReadyEvent } from "ag-grid-community";
+import { ColDef, GridReadyEvent, ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import { Search, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 // Note: AG Grid styles are imported in index.css
 
@@ -84,6 +86,7 @@ export function AppDataTable<T = any>({
         style={{ height }}
       >
         <AgGridReact
+          theme="legacy"
           rowData={rowData}
           columnDefs={columnDefs}
           onGridReady={onGridReady}

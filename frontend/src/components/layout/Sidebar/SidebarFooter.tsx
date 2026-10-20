@@ -54,8 +54,8 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
 
   return (
     <div
-      className={`border-t border-[#1D293D] bg-[#0F172B] overflow-hidden transition-all duration-300 ${
-        collapsed ? "p-2.5 space-y-2" : "p-3 space-y-3"
+      className={`border-t border-slate-200 dark:border-[#1D293D] bg-slate-50/70 dark:bg-[#0F172B] transition-all duration-300 ${
+        collapsed ? "overflow-visible p-2.5 space-y-2" : "overflow-hidden p-3 space-y-3"
       }`}
     >
       {/* 3-Column Utility Grid (Figma #1159:1260) */}
@@ -66,10 +66,10 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
             : "max-h-12 opacity-100 translate-y-0"
         }`}
       >
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#1D293D]/40 p-1 border border-[#1D293D]/60">
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 dark:bg-[#1D293D]/40 p-1 border border-slate-200 dark:border-[#1D293D]/60">
           <button
             onClick={() => window.open("https://docs.orbito.com", "_blank")}
-            className="flex h-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1D293D] transition-colors focus-ring"
+            className="flex h-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D] transition-colors focus-ring"
             title="Help & Documentation"
             aria-label="Help & Documentation"
           >
@@ -78,7 +78,7 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
 
           <a
             href="/system-config"
-            className="flex h-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1D293D] transition-colors focus-ring"
+            className="flex h-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D] transition-colors focus-ring"
             title="System Config / Audit Log"
             aria-label="System Config"
           >
@@ -87,7 +87,7 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
 
           <button
             onClick={toggleTheme}
-            className="flex h-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1D293D] transition-colors focus-ring"
+            className="flex h-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D] transition-colors focus-ring"
             title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
             aria-label="Toggle Theme"
           >
@@ -100,7 +100,7 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
       <div className="relative group" ref={menuRef}>
         <div
           onClick={() => setMenuOpen(!menuOpen)}
-          className={`flex items-center cursor-pointer transition-all duration-300 ease-in-out border border-[#1D293D]/80 bg-[#1D293D]/30 hover:bg-[#1D293D]/60 rounded-xl ${
+          className={`flex items-center cursor-pointer transition-all duration-300 ease-in-out border border-slate-200 dark:border-[#1D293D]/80 bg-white dark:bg-[#1D293D]/30 hover:bg-slate-100 dark:hover:bg-[#1D293D]/60 rounded-xl ${
             collapsed
               ? "w-11 h-11 mx-auto justify-center !p-0"
               : "w-full justify-between p-2"
@@ -122,16 +122,16 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
             } overflow-hidden`}
           >
             {/* Initials Avatar */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white font-bold text-xs shadow-sm ring-1 ring-[#314158]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white font-bold text-xs shadow-sm ring-1 ring-slate-200 dark:ring-[#314158]">
               {userInitials}
             </div>
 
             {!collapsed && (
               <div className="truncate text-left transition-all duration-300 ease-in-out overflow-hidden max-w-[150px] opacity-100 translate-x-0">
-                <p className="text-xs font-semibold text-white truncate leading-tight">
+                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate leading-tight">
                   {displayName}
                 </p>
-                <p className="text-[10px] font-medium text-[#62748E] truncate leading-tight mt-0.5">
+                <p className="text-[10px] font-medium text-slate-500 dark:text-[#62748E] truncate leading-tight mt-0.5">
                   {userRole}
                 </p>
               </div>
@@ -147,7 +147,7 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
         {collapsed && (
           <div
             role="tooltip"
-            className="pointer-events-none absolute left-full ml-3 hidden md:group-hover:flex items-center rounded-lg bg-[#0F172B] border border-[#1D293D] px-2.5 py-1 text-xs font-semibold text-white shadow-xl whitespace-nowrap z-50 animate-in fade-in zoom-in-95 duration-150"
+            className="pointer-events-none absolute left-full ml-3 hidden md:group-hover:flex items-center rounded-lg bg-slate-900 text-white dark:bg-[#0F172B] dark:border-[#1D293D] dark:text-white border border-slate-700/60 px-2.5 py-1 text-xs font-semibold shadow-xl whitespace-nowrap z-[60] animate-in fade-in zoom-in-95 duration-150"
           >
             <span>{displayName}</span>
           </div>
@@ -156,14 +156,14 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
         {/* User Popover Menu */}
         {menuOpen && (
           <div
-            className={`absolute z-50 mb-2 w-56 rounded-xl border border-slate-700 bg-[#0F172B] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
+            className={`absolute z-[60] mb-2 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172B] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
               collapsed ? "bottom-0 left-full ml-3" : "bottom-full left-0 mb-2"
             }`}
           >
-            <div className="px-3 py-2 border-b border-[#1D293D]">
-              <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-              <p className="text-[11px] text-[#7B7F8A] truncate">{currentUser?.email}</p>
-              <span className="inline-block mt-1 rounded bg-blue-900/60 text-blue-300 px-1.5 py-0.5 text-[10px] font-medium uppercase">
+            <div className="px-3 py-2 border-b border-slate-200 dark:border-[#1D293D]">
+              <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{displayName}</p>
+              <p className="text-[11px] text-slate-500 dark:text-[#7B7F8A] truncate">{currentUser?.email}</p>
+              <span className="inline-block mt-1 rounded bg-blue-50 text-blue-600 border border-blue-200 dark:border-transparent dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 text-[10px] font-medium uppercase">
                 {userRole}
               </span>
             </div>
@@ -171,7 +171,7 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
             <div className="mt-1">
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-colors focus-ring"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 transition-colors focus-ring"
               >
                 <AppIcon icon={LogOut} size="sm" />
                 <span>Sign Out</span>
@@ -185,13 +185,13 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
       {!isMobile && (
         <button
           onClick={onToggleCollapse}
-          className={`hidden md:flex items-center justify-center rounded-lg text-slate-400 hover:bg-[#1D293D] hover:text-white transition-colors focus-ring ${
+          className={`hidden md:flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-[#1D293D] dark:hover:text-white transition-colors focus-ring ${
             collapsed ? "w-11 h-11 mx-auto p-0" : "w-full p-2"
           }`}
           title={collapsed ? "Expand Sidebar (256px)" : "Collapse Sidebar (80px)"}
           aria-label={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#7B7F8A] hover:text-white w-full overflow-hidden">
+          <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-[#7B7F8A] dark:hover:text-white w-full overflow-hidden">
             <ChevronLeft
               className={`h-4 w-4 transition-transform duration-300 ease-in-out shrink-0 ${
                 collapsed ? "rotate-180" : "rotate-0"

@@ -1,9 +1,12 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
 export const AppLayout: React.FC = () => {
+  const location = useLocation();
+  const isFullBleedLayout = location.pathname.startsWith("/system-config");
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-[#070B14] text-slate-900 dark:text-slate-100 transition-colors">
       {/* Skip-to-content accessibility link (WCAG 2.1 AA) */}
@@ -20,7 +23,10 @@ export const AppLayout: React.FC = () => {
       {/* Main viewport area */}
       <div className="flex flex-1 flex-col h-full overflow-hidden min-w-0">
         <Header />
-        <main id="main-content" className="flex-1 overflow-y-auto layout-container">
+        <main
+          id="main-content"
+          className={`flex-1 overflow-y-auto ${isFullBleedLayout ? "h-full" : "layout-container"}`}
+        >
           <Outlet />
         </main>
       </div>

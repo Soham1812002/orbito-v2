@@ -14,13 +14,14 @@ out
 .env.*.local
 !.env.example
 
-# Logs
+# Logs & Test Artifacts
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.playwright-mcp/
 
 # Database & Storage
 uploads/

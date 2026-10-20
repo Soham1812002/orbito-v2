@@ -73,7 +73,7 @@
   }
 
   .panel-sidebar {
-    @apply border-r border-[#1D293D] bg-[#0F172B] text-slate-100;
+    @apply border-r border-slate-200 bg-white text-slate-800 dark:border-[#1D293D] dark:bg-[#0F172B] dark:text-slate-100 transition-colors;
   }
 
   /* 2. Interactive & Accessibility Utilities */
@@ -95,7 +95,7 @@
   }
 
   .nav-item-idle {
-    @apply text-[#7B7F8A] hover:bg-[#1D293D]/70 hover:text-white;
+    @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-[#7B7F8A] dark:hover:bg-[#1D293D]/70 dark:hover:text-white;
   }
 
   /* 4. Badges & Indicators */
@@ -108,7 +108,7 @@
   }
 
   .badge-cyan {
-    @apply inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold italic text-[#95F8FF] backdrop-blur-sm;
+    @apply inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold italic text-blue-600 dark:text-[#95F8FF] backdrop-blur-sm;
   }
 
   .badge-counter {

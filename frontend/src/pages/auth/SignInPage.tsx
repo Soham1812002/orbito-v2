@@ -66,33 +66,12 @@ export const SignInPage: React.FC = () => {
 
       showToast.success(`Welcome back, ${user.firstName || user.email}!`);
       navigate(from, { replace: true });
-    } catch {
-      // Seamless development fallback when backend is offline
-      if (import.meta.env.DEV) {
-        const isSuperAdmin = data.email.includes("admin");
-        const mockUser = {
-          id: isSuperAdmin ? "demo-admin-id" : "demo-user-id",
-          email: data.email || "admin@example.com",
-          firstName: isSuperAdmin ? "Alex" : "Jordan",
-          lastName: isSuperAdmin ? "Mercer (Admin)" : "Lee",
-          roles: isSuperAdmin ? ["SUPER_ADMIN"] : ["FLEET_MANAGER"],
-          permissions: isSuperAdmin
-            ? ["OPERATE:ALL", "VIEW:USER", "CREATE:USER", "UPDATE:USER", "DELETE:USER"]
-            : ["VIEW:USER", "VIEW:DASHBOARD"]
-        };
-
-        dispatch(
-          setCredentials({
-            user: mockUser,
-            token: "demo-jwt-offline-token",
-            rememberMe: data.rememberMe
-          })
-        );
-
-        showToast.success(`Signed in as ${mockUser.firstName} (Demo Mode)`);
-        navigate(from, { replace: true });
-        return;
-      }
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid credentials or authentication failed. Please try again.";
+      showToast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

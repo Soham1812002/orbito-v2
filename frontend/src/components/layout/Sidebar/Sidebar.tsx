@@ -7,27 +7,38 @@ import { useSidebar } from "../../../context/SidebarContext";
 export const Sidebar: React.FC = () => {
   const { collapsed, toggleCollapse, mobileOpen, closeMobile } = useSidebar();
 
-  const renderContent = (isMobile = false) => (
-    <div className="flex h-full flex-col justify-between panel-sidebar overflow-hidden select-none">
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <SidebarBrand
-          collapsed={isMobile ? false : collapsed}
-          onCloseMobile={closeMobile}
+  const renderContent = (isMobile = false) => {
+    const isCollapsed = isMobile ? false : collapsed;
+    return (
+      <div
+        className={`flex h-full flex-col justify-between panel-sidebar select-none ${
+          isCollapsed ? "overflow-visible" : "overflow-hidden"
+        }`}
+      >
+        <div
+          className={`flex flex-col flex-1 ${
+            isCollapsed ? "overflow-visible" : "overflow-hidden"
+          }`}
+        >
+          <SidebarBrand
+            collapsed={isCollapsed}
+            onCloseMobile={closeMobile}
+            isMobile={isMobile}
+          />
+          <SidebarNav
+            collapsed={isCollapsed}
+            onItemClick={isMobile ? closeMobile : undefined}
+          />
+        </div>
+
+        <SidebarFooter
+          collapsed={isCollapsed}
+          onToggleCollapse={toggleCollapse}
           isMobile={isMobile}
         />
-        <SidebarNav
-          collapsed={isMobile ? false : collapsed}
-          onItemClick={isMobile ? closeMobile : undefined}
-        />
       </div>
-
-      <SidebarFooter
-        collapsed={isMobile ? false : collapsed}
-        onToggleCollapse={toggleCollapse}
-        isMobile={isMobile}
-      />
-    </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -39,8 +50,8 @@ export const Sidebar: React.FC = () => {
         aria-label="Sidebar navigation"
       >
         <div
-          className={`fixed inset-y-0 left-0 z-30 h-full overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-            collapsed ? "w-20" : "w-64"
+          className={`fixed inset-y-0 left-0 z-30 h-full transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+            collapsed ? "w-20 overflow-visible" : "w-64 overflow-hidden"
           }`}
         >
           {renderContent(false)}

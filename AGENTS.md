@@ -24,6 +24,7 @@ Orbito v2 is a web application made of two parts:
 6. **Never guess:** Check real files and run real terminal commands. Do not invent package names or file paths.
 7. **Always verify:** Run `npm run build` in both backend and frontend to prove your code compiles with zero errors.
 8. **Keep documentation up to date:** Whenever you add a package, route, model, or rule, update the matching skill in `.agents/skills/` before finishing.
+9. **File & component line limit:** No single file or component should ever exceed 1000 lines (target <= 400 for React components, <= 500 for backend services). Decompose and modularize code into sub-components or domain helpers before reaching this ceiling.
 
 ---
 
@@ -38,6 +39,7 @@ Orbito v2 has dedicated skills in the [`.agents/skills/`](file:///Users/soham18/
 | **Rules** | [rules/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/rules/SKILL.md) | Coding and security rules: password hashing, permissions (RBAC), input validation, database transactions, and error handling. |
 | **Code Review** | [code-review/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/code-review/SKILL.md) | The pre-flight checklist, build verification commands, and response format to use before completing a task. |
 | **UI Layout Executor** | [ui-layout-executor/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/ui-layout-executor/SKILL.md) | The standard layout system, design tokens, common utility classes, icons module, and responsive guidelines. |
+| **Backend Pattern Executor** | [backend-pattern-executor/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/backend-pattern-executor/SKILL.md) | The strict 5-layer backend pattern, zero-drift PostgreSQL migrations, Sequelize ORM standards, DTO validation, transactions, and seeding. |
 
 ---
 

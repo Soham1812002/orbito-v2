@@ -99,6 +99,12 @@ frontend/src/pages/<entity-name>/
 └── Entity.columns.tsx # 8. AG Grid column definitions (headers, badges, action buttons)
 ```
 
+### 3.3 File & Component Size Cap Rule (Max 1000 Lines)
+To preserve maintainability, readability, and code-review speed:
+- **Maximum Ceiling:** No file or component may exceed 1000 lines of code.
+- **Component Decomposition:** React components should target `<= 400 lines`. When a page or view approaches this size, extract sub-elements (modals, toolbars, stat grids, table row renderers) into dedicated sub-component files.
+- **Backend Services:** Backend business logic files should target `<= 500 lines`. Split large domains into smaller domain-specific service helpers.
+
 ---
 
 ## 4. API Communication Contracts
@@ -164,15 +170,26 @@ GET /v1/api/<entities>?page=1&limit=10&search=john&filter[isActive]=true&sortBy=
 
 ---
 
-## 5. Database Migrations (Zero-Drift)
+## 5. Database Migrations (Zero-Drift) & Model Conventions
 
 - Never alter database tables using manual SQL.
 - All schema changes must be written as migration files in `backend/src/migrations/`.
 - Every migration runs inside a transaction and logs its name in `sequelize_meta`.
 - **Pre-flight Check (`backend/src/server.ts`):** On startup, the server checks `sequelize_meta`. In production, the server refuses to start if any migration is pending, preventing database mismatch.
+- **System & App Configuration Storage Pattern:** For multi-domain dynamic configuration modules, use partitioned document-store tables (`system_configs` and `app_configs`) with an indexed `module_key: VARCHAR(64)` and JSONB `data` column with soft-delete (`paranoid: true`). This decouples rapidly evolving fleet entity schemas without requiring hundreds of migration files.
+- **Secondary Sub-Layout & Hub Pattern:** Complex configuration modules (e.g. Sys Config, App Config) must feature an independent sub-layout shell (`AppConfigLayout.tsx`) with a collapsible secondary navigation sidebar, category accordions, instant client-side module search, and a central Command Hub (`AppConfigHubPage.tsx`) rendering live KPI metrics and module launchpads.
+- **Component Decomposition Standard:** Keep all components strictly under the 400-line ceiling by extracting modal dialogs (`AppConfigFormModal.tsx`), specialized batch tools (`MasterDataXlsPage.tsx`), and workflow inspectors (`RemoveEntityPage.tsx`).
 
 ---
 
-## 6. How and When to Update This Skill
+## 6. Frontend Zero-Mock Policy
+
+- **No Mock Stores in Production:** All pages and feature modules must retrieve, mutate, and persist data using TanStack React Query (`useQuery` / `useMutation`) communicating with backend REST endpoints via Axios (`apiClient`).
+- **No Offline Demo Bypass Tokens:** Avoid falling back to offline tokens (e.g. `demo-jwt-offline-token`) in catch blocks; real API error messages must be captured and displayed to the user via toast notifications.
+- **Dynamic Config Registration:** UI pages configuring dynamic domains (e.g. `ConfigEntityPage.tsx`) define schemas and columns locally, but all entities must be fetched and persisted to the database.
+
+---
+
+## 7. How and When to Update This Skill
 
 > **Instruction:** When you add a new model, route, service, or frontend feature module, update this file so the architectural blueprint stays accurate.

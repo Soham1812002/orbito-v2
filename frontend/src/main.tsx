@@ -8,9 +8,13 @@ import { store } from "./redux/store";
 import { queryClient } from "./lib/queryClient";
 import { ThemeProvider } from "./context/ThemeContext";
 import { GlobalContextProvider } from "./context/GlobalContextProvider";
+import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import i18n from "./lib/i18n";
 import App from "./App";
 import "./index.css";
+
+// Register AG Grid Community Features globally
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

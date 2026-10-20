@@ -1,6 +1,9 @@
 export const ROLES = {
   SUPER_ADMIN: "SUPER_ADMIN",
   ADMIN: "ADMIN",
+  FLEET_MANAGER: "FLEET_MANAGER",
+  BRANCH_OPERATOR: "BRANCH_OPERATOR",
+  OPERATIONS_LEAD: "OPERATIONS_LEAD",
   USER: "USER"
 } as const;
 
@@ -12,11 +15,20 @@ export const PERMISSIONS = {
   DELETE_USER: "DELETE:USER",
   VIEW_ROLE: "VIEW:ROLE",
   CREATE_ROLE: "CREATE:ROLE",
-  UPDATE_ROLE: "UPDATE:ROLE"
+  UPDATE_ROLE: "UPDATE:ROLE",
+  VIEW_AUDIT_LOG: "VIEW:AUDIT_LOG",
+  VIEW_SYSTEM_CONFIG: "VIEW:SYSTEM_CONFIG",
+  MANAGE_SYSTEM_CONFIG: "MANAGE:SYSTEM_CONFIG",
+  VIEW_APP_CONFIG: "VIEW:APP_CONFIG",
+  MANAGE_APP_CONFIG: "MANAGE:APP_CONFIG"
 } as const;
 
 export const API_ROUTES = {
   BASE: "/v1/api",
   AUTH: "/v1/api/auth",
-  USERS: "/v1/api/users"
+  USERS: "/v1/api/users",
+  ROLES: "/v1/api/roles",
+  AUDIT_LOGS: "/v1/api/audit-logs",
+  SYSTEM_CONFIGS: "/v1/api/system-configs",
+  APP_CONFIGS: "/v1/api/app-configs"
 } as const;

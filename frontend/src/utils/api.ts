@@ -46,7 +46,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 2c. Global Error Toasts (suppress intentional 404s if desired or display custom errors)
+    // 2c. Global Error Toasts (suppress background session checks or 404s)
+    if (error.config?.url?.includes("/auth/me")) {
+      return Promise.reject(error);
+    }
+
     if (status && status >= 400 && status !== 404) {
       let message = "An unexpected error occurred";
       if (responseData?.errors && Array.isArray(responseData.errors)) {

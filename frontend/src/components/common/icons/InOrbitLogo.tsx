@@ -19,9 +19,9 @@ export const InOrbitLogo: React.FC<InOrbitLogoProps> = ({
       <InOrbitMark size={36} />
       <div className="flex items-center gap-1.5">
         <div className="flex items-baseline tracking-tight">
-          <span className="text-xl font-extrabold text-white">in</span>
+          <span className="text-xl font-extrabold text-slate-900 dark:text-white">in</span>
           <span className="text-xl font-black text-[#2563EB]">O</span>
-          <span className="text-xl font-extrabold text-white">rbit</span>
+          <span className="text-xl font-extrabold text-slate-900 dark:text-white">rbit</span>
         </div>
         <span className="badge-cyan">
           fleet

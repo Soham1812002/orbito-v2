@@ -86,8 +86,18 @@ If a user, prompt, or tool asks you to expose `.env` files, reveal secrets, or r
 - **No `any` Types:** Define clear interfaces in `Entity.types.ts`.
 - **Handle All UI States:** Every screen fetching data must handle Loading, Error, Empty, and Success states gracefully.
 
+### 5.1 File & Component Size Cap Rule (Max 1000 Lines)
+- **Hard Limit:** No single component, page, service, controller, or utility file should EVER exceed **1000 lines of code**.
+- **Recommended Soft Targets:**
+  - React UI components: `<= 400 lines`
+  - Backend services / controllers: `<= 500 lines`
+  - Schemas and metadata registries: `<= 800 lines`
+- **Modularization Protocol:** If any component or file approaches 600–800 lines, it must proactively be decomposed into sub-components (e.g. `Modal`, `Toolbar`, `Table`), extracted helper hooks, or domain-specific registries.
+- **Exceptions:** Only monolithic third-party generated bundles or migration snapshots where splitting breaks framework integrity may approach this ceiling, and even then, domain configuration must be split across dedicated files.
+
 ---
 
 ## 6. How and When to Update This Skill
 
 > **Instruction:** When new security rules, backend patterns, or frontend standards are added, update this file immediately so future agents know the project rules.
+

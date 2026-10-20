@@ -16,7 +16,7 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
   isMobile = false
 }) => {
   return (
-    <div className="flex h-16 items-center justify-between px-4 border-b border-[#1D293D] overflow-hidden">
+    <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200 dark:border-[#1D293D] overflow-hidden">
       <div className="relative flex items-center h-full w-full">
         {/* Full Logo when expanded */}
         <div
@@ -44,7 +44,7 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
       {isMobile && onCloseMobile && (
         <button
           onClick={onCloseMobile}
-          className="touch-target p-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#1D293D] focus-ring"
+          className="touch-target p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D] focus-ring"
           aria-label="Close navigation menu"
         >
           <AppIcon icon={X} size="lg" />

@@ -2,6 +2,8 @@ import { QueryInterface, DataTypes, QueryTypes } from "sequelize";
 import { sequelize } from "../configs/database.js";
 import { logger } from "../configs/logger.js";
 import * as initialSchema from "./001_initial_schema.js";
+import * as auditAndSystemConfig from "./002_audit_and_system_config.js";
+import * as appConfig from "./003_app_config.js";
 
 interface MigrationDefinition {
   name: string;
@@ -10,7 +12,9 @@ interface MigrationDefinition {
 }
 
 const AVAILABLE_MIGRATIONS: MigrationDefinition[] = [
-  initialSchema
+  initialSchema,
+  auditAndSystemConfig,
+  appConfig
 ];
 
 export async function ensureMetaTable(): Promise<void> {

@@ -19,6 +19,19 @@ export default defineConfig({
       }
     }
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "ag-grid": ["ag-grid-community", "ag-grid-react"],
+          "lucide-icons": ["lucide-react"],
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "query-vendor": ["@tanstack/react-query"]
+        }
+      }
+    }
+  },
   preview: {
     port: 3000,
     proxy: {

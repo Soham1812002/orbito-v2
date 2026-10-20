@@ -30,6 +30,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      // Invalidate any legacy demo offline tokens so real backend auth is required
+      if (activeToken.startsWith("demo-")) {
+        dispatch(logout());
+        if (isMounted) setIsCheckingAuth(false);
+        return;
+      }
+
       try {
         const response = await apiClient.get("/auth/me");
         if (isMounted && response.data?.result) {

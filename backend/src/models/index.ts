@@ -43,6 +43,10 @@ User.hasMany(UserPasswordHistory, {
   onDelete: "CASCADE"
 });
 
+import { AuditLog } from "./audit_log.model.js";
+import { SystemConfig } from "./system_config.model.js";
+import { AppConfig } from "./app_config.model.js";
+
 UserPasswordHistory.belongsTo(User, {
   foreignKey: "userId",
   as: "user"
@@ -55,5 +59,9 @@ export {
   Permission,
   UserRole,
   RolePermission,
-  UserPasswordHistory
+  UserPasswordHistory,
+  AuditLog,
+  SystemConfig,
+  AppConfig
 };
+

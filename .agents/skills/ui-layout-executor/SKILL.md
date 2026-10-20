@@ -89,16 +89,17 @@ Orbito v2 provides pre-built utility classes in `index.css`. Always prefer these
 ### 4.1 Surfaces & Panels
 - **`.panel-card`**: Standard card surface with 16px radius, border, and elevation (adapts to light and dark modes).
 - **`.panel-glass`**: Glassmorphic surface with backdrop blur for headers, sticky bars, and overlays.
-- **`.panel-sidebar`**: Exact dark navy canvas styling for sidebar components.
+- **`.panel-sidebar`**: Theme-responsive sidebar canvas styling (`bg-white border-slate-200 text-slate-800` in light mode, and `dark:bg-[#0F172B] dark:border-[#1D293D] dark:text-slate-100` in dark mode).
 
 ### 4.2 Interactivity & Accessibility (A11y)
 - **`.focus-ring`**: WCAG 2.1 AA compliant keyboard focus ring (`focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`).
 - **`.touch-target`**: Minimum 44x44px touch-friendly hit area (`min-h-[44px] min-w-[44px]`).
 
-### 4.3 Navigation States
+### 4.3 Navigation States & Collapsed Tooltips
 - **`.nav-item-base`**: Common transition, padding, border-radius, and font styling for navigation links.
 - **`.nav-item-active`**: Royal blue pill (`#2563EB`) with subtle elevation shadow and white text.
-- **`.nav-item-idle`**: Inactive navigation state (`#7B7F8A` with `#1D293D` hover).
+- **`.nav-item-idle`**: Inactive navigation state (`text-slate-600 hover:bg-slate-100` in light mode, `dark:text-[#7B7F8A] dark:hover:bg-[#1D293D]/70 dark:hover:text-white` in dark mode).
+- **Collapsed Sidebar Overflow Rule**: When the sidebar is collapsed (`w-20` / 80px), the outer aside, parent container, and `<nav>` list must switch from `overflow-hidden` to `overflow-visible` so that floating tooltips and cascading flyouts never cause horizontal scrollbars or get clipped. Floating tooltips and popovers must use `z-[60]`.
 
 ### 4.4 Badges & Pills
 - **`.badge-pill`**: Standard rounded pill container with uppercase tracking.
@@ -174,8 +175,9 @@ export const EntityList: React.FC = () => {
 
 ---
 
-## 7. Adding Navigation Items
+## 7. Adding Navigation Items & Dual-Level Nested Navigation
 
+### 7.1 Basic Navigation Config
 **NEVER** hardcode routes into `Sidebar.tsx`. Add them to [`frontend/src/components/layout/Sidebar/navigation.config.ts`](file:///Users/soham18/Desktop/orbito-v2/frontend/src/components/layout/Sidebar/navigation.config.ts):
 
 ```typescript
@@ -189,6 +191,33 @@ export const EntityList: React.FC = () => {
   badgeType: "alert"
 }
 ```
+
+### 7.2 Dual-Level Nested Navigation & In-Module Sub-Sidebar Architecture
+When a navigation domain comprises dense multi-entity workflows (such as System Configuration with 10+ sub-modules), avoid cramming all routes into the top-level sidebar or flattening them onto a single page. Adhere to the **Dual-Level Navigation Pattern**:
+
+```mermaid
+graph TD
+    A["Main Sidebar (Global Navigation)"] -->|Expanded Mode 256px| B["Accordion Sub-List (Slide & Fade)"]
+    A -->|Collapsed Mini-Mode 80px| C["Hover Flyout Popover (Search + 2-Column Grid)"]
+    A --> D["In-Module Contextual Sub-Sidebar (240px Shell)"]
+    D --> E["Categorized Module Groups & In-App Filter"]
+```
+
+1. **Config Definition (`NavSubItemConfig`):**
+   - Populate `children: NavSubItemConfig[]` under the parent item in `navigation.config.ts`.
+   - Each sub-item defines `key`, `name`, `path`, optional `icon`, `permission`, and `badge`.
+2. **Expanded Sidebar Mode (256px):**
+   - Renders an accordion chevron button with accessible `aria-expanded` and `aria-controls`.
+   - Auto-expands whenever the user is actively on any child sub-route.
+   - Sub-items render with subtle indent (`pl-10`), smooth transition, and a left accent indicator pill on the active route.
+3. **Collapsed Sidebar Mode (80px Mini):**
+   - Clicking or hovering triggers a floating flyout popover menu (`w-80 rounded-2xl bg-[#0F172B] shadow-2xl border border-[#1D293D] p-3.5`).
+   - Includes a live real-time filter search bar for instant keyboard-friendly navigation.
+   - Uses an invisible hover bridge (`before:content-[''] before:absolute before:-left-3 before:top-0 before:w-3 before:h-full`) so mouse movement from sidebar to popover never flickers or closes unexpectedly.
+4. **Contextual In-Module Sub-Sidebar Shell:**
+   - Complex domains implement a layout wrapper (e.g. `SystemConfigLayout.tsx`) with a dedicated secondary sidebar (240px).
+   - Features structured category groupings (e.g. *Identity & Access*, *Connectivity*, *Hardware*), live module search, collapse toggle pin, and responsive mobile bottom sheet or slide-over drawer.
+
 
 ---
 
@@ -285,3 +314,4 @@ To ensure continuous improvement and permanently avoid repeating mistakes:
 | **DO** use `h1` in `PageHeader` and sequential `h2`/`h3` in sections. | **DON'T** skip heading levels (`h1` -> `h4`) which breaks screen readers. |
 | **DO** update skills after completing any feature to capture lessons learned. | **DON'T** finish a task without recording new patterns or resolved mistakes. |
 | **DO** run `cd frontend && npm run build` before finishing. | **DON'T** introduce TypeScript errors or suppress them with `@ts-ignore`. |
+| **DO** decompose complex configuration pages into extracted modals (`FormModal`), sub-layouts, and domain tools to keep files <= 400 lines. | **DON'T** let component files balloon over 400 lines by inlining forms, tables, and file parsers together. |
