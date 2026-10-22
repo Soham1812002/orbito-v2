@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Modal } from "../../components/common/Modal";
-import { Input } from "../../components/common/Input";
-import { Button } from "../../components/common/Button";
-import { userFormSchema, UserFormData } from "./Entity.schema";
-import { User } from "./Entity.types";
-import { useCreateUser, useUpdateUser, useRolesList } from "./Entity.queries";
+import { Modal } from "@/components/common/Modal";
+import { Input } from "@/components/common/Input";
+import { Button } from "@/components/common/Button";
+import { userFormSchema, UserFormData } from "@/schemas/users.schema";
+import { User } from "@/types/users.types";
+import { useCreateUser, useUpdateUser, useRolesList } from "@/queries/users.queries";
 
 interface EntityFormProps {
   isOpen: boolean;

@@ -9,10 +9,10 @@ import {
   RefreshCw,
   Loader2
 } from "lucide-react";
-import { PageHeader } from "../../../components/layout/PageHeader";
-import { Button } from "../../../components/common/Button";
-import { showToast } from "../../../lib/toast";
-import { auditLogApi, AuditLogItem } from "./AuditLog.api";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/common/Button";
+import { showToast } from "@/lib/toast";
+import { auditLogApi, AuditLogItem } from "@/api/auditLog.api";
 
 export const AuditLogPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");

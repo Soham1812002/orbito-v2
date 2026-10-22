@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { navigationSections, NavItemConfig, NavSubItemConfig } from "./navigation.config";
-import { AppIcon } from "../../common/icons/AppIcon";
-import { useAppSelector } from "../../../redux/hooks";
-import { hasPermission } from "../../../utils/permissions";
+import { AppIcon } from "@/components/common/icons/AppIcon";
+import { useAppSelector } from "@/redux/hooks";
+import { hasPermission } from "@/utils/permissions";
 
 export interface SidebarNavProps {
   collapsed: boolean;
@@ -19,8 +19,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   const { currentUser } = useAppSelector((state) => state.user);
 
   // Track accordion expand states in expanded sidebar
-  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({
-    "sys-config": location.pathname.startsWith("/system-config")
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    if (location.pathname.startsWith("/system-config")) initial["sys-config"] = true;
+    else if (location.pathname.startsWith("/app-config")) initial["app-config"] = true;
+    else if (location.pathname.startsWith("/reports")) initial["reports"] = true;
+    return initial;
   });
 
   // Track active flyout in collapsed mini-mode
@@ -28,10 +32,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   const [flyoutSearch, setFlyoutSearch] = useState("");
   const flyoutTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-expand menu when entering its child routes
+  // Auto-expand menu when entering its child routes and collapse other sections
   useEffect(() => {
     if (location.pathname.startsWith("/system-config")) {
-      setOpenSubmenus((prev) => ({ ...prev, "sys-config": true }));
+      setOpenSubmenus({ "sys-config": true });
+    } else if (location.pathname.startsWith("/app-config")) {
+      setOpenSubmenus({ "app-config": true });
+    } else if (location.pathname.startsWith("/reports")) {
+      setOpenSubmenus({ "reports": true });
     }
   }, [location.pathname]);
 
@@ -104,6 +112,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                 const hasChildren = !!item.children && item.children.length > 0;
                 const isSubmenuOpen = !!openSubmenus[item.key];
                 const isChildActive = hasChildren && item.children?.some((c) => location.pathname === c.path);
+                const isParentActive = hasChildren
+                  ? location.pathname.startsWith(item.path) || !!isChildActive
+                  : location.pathname === item.path;
 
                 return (
                   <div
@@ -112,89 +123,105 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     onMouseEnter={() => collapsed && hasChildren && handleFlyoutEnter(item.key)}
                     onMouseLeave={() => collapsed && hasChildren && handleFlyoutLeave()}
                   >
-                    <NavLink
-                      to={hasChildren && !collapsed ? "#" : item.path}
-                      onClick={(e) => {
-                        if (hasChildren && !collapsed) {
-                          toggleSubmenu(item.key, e);
-                        } else {
-                          onItemClick?.();
-                        }
-                      }}
-                      className={({ isActive }) =>
-                        `transition-all duration-300 ease-in-out ${
-                          collapsed
-                            ? "w-11 h-11 mx-auto justify-center !px-0 !gap-0"
-                            : "w-full justify-between px-3 gap-3"
-                        } nav-item-base ${
-                          isActive || isChildActive
+                    {hasChildren && !collapsed ? (
+                      <button
+                        type="button"
+                        onClick={(e) => toggleSubmenu(item.key, e)}
+                        className={`transition-all duration-300 ease-in-out w-full justify-between px-3 gap-3 nav-item-base ${
+                          isParentActive
                             ? "nav-item-active"
                             : "nav-item-idle"
-                        } relative`
-                      }
-                    >
-                      <div
-                        className={`flex items-center ${
-                          collapsed ? "justify-center !gap-0" : "gap-3"
-                        } overflow-hidden`}
+                        } relative cursor-pointer text-left`}
+                        aria-expanded={isSubmenuOpen}
+                        aria-label={`${item.name} menu`}
                       >
-                        <div className="relative shrink-0 flex items-center justify-center">
-                          <AppIcon icon={IconComponent} size="md" />
-                          {collapsed && item.badge && (
-                            <span
-                              className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-[#EF4444] ring-2 ring-white dark:ring-[#0F172B] animate-pulse"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </div>
-
-                        {!collapsed && (
-                          <span className="truncate whitespace-nowrap transition-all duration-300 ease-in-out max-w-[140px] opacity-100 translate-x-0">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="relative shrink-0 flex items-center justify-center">
+                            <AppIcon icon={IconComponent} size="md" />
+                            {item.badge && (
+                              <span
+                                className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-[#EF4444] ring-2 ring-white dark:ring-[#0F172B] animate-pulse"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+                          <span className="truncate whitespace-nowrap transition-all duration-300 ease-in-out max-w-[140px]">
                             {item.name}
                           </span>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Right indicator: Badge or Accordion Chevron */}
-                      {!collapsed && (
                         <div className="flex items-center gap-1.5 ml-auto">
                           {item.badge && (
-                            <span className="badge-alert transition-all duration-300 ease-in-out max-w-[40px] opacity-100 scale-100">
+                            <span className="badge-alert transition-all duration-300 ease-in-out max-w-[40px]">
                               {item.badge}
                             </span>
                           )}
-                          {hasChildren && (
-                            <button
-                              type="button"
-                              onClick={(e) => toggleSubmenu(item.key, e)}
-                              className="p-1 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white transition-transform focus:outline-none"
-                              aria-label={isSubmenuOpen ? "Collapse sub-menu" : "Expand sub-menu"}
-                            >
-                              <ChevronDown
-                                className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                                  isSubmenuOpen ? "rotate-180" : "rotate-0"
-                                }`}
-                              />
-                            </button>
-                          )}
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform duration-200 text-slate-400 dark:text-slate-500 ${
+                              isSubmenuOpen ? "rotate-180" : "rotate-0"
+                            }`}
+                          />
                         </div>
-                      )}
-
-                      {/* Simple Accessible Floating Tooltip (Only for items without children in collapsed mode) */}
-                      {collapsed && !hasChildren && (
+                      </button>
+                    ) : (
+                      <NavLink
+                        to={item.path}
+                        onClick={onItemClick}
+                        className={({ isActive }) =>
+                          `transition-all duration-300 ease-in-out ${
+                            collapsed
+                              ? "w-11 h-11 mx-auto justify-center !px-0 !gap-0"
+                              : "w-full justify-between px-3 gap-3"
+                          } nav-item-base ${
+                            (collapsed ? isParentActive : isActive)
+                              ? "nav-item-active"
+                              : "nav-item-idle"
+                          } relative`
+                        }
+                      >
                         <div
-                          role="tooltip"
-                          className="pointer-events-none absolute left-full ml-3 hidden md:group-hover:flex items-center gap-2 rounded-lg bg-slate-900 text-white dark:bg-[#0F172B] dark:border-[#1D293D] dark:text-white border border-slate-700/60 px-2.5 py-1 text-xs font-semibold shadow-xl whitespace-nowrap z-[60] animate-in fade-in zoom-in-95 duration-150"
+                          className={`flex items-center ${
+                            collapsed ? "justify-center !gap-0" : "gap-3"
+                          } overflow-hidden`}
                         >
-                          <span>{item.name}</span>
-                          {item.badge && (
-                            <span className="badge-alert text-[9px] px-1.5 py-0.2">
-                              {item.badge}
+                          <div className="relative shrink-0 flex items-center justify-center">
+                            <AppIcon icon={IconComponent} size="md" />
+                            {collapsed && item.badge && (
+                              <span
+                                className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-[#EF4444] ring-2 ring-white dark:ring-[#0F172B] animate-pulse"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+
+                          {!collapsed && (
+                            <span className="truncate whitespace-nowrap transition-all duration-300 ease-in-out max-w-[140px] opacity-100 translate-x-0">
+                              {item.name}
                             </span>
                           )}
                         </div>
-                      )}
-                    </NavLink>
+
+                        {!collapsed && item.badge && (
+                          <span className="badge-alert ml-auto">
+                            {item.badge}
+                          </span>
+                        )}
+
+                        {collapsed && (
+                          <div
+                            role="tooltip"
+                            className="pointer-events-none absolute left-full ml-3 hidden md:group-hover:flex items-center gap-2 rounded-lg bg-slate-900 text-white dark:bg-[#0F172B] dark:border-[#1D293D] dark:text-white border border-slate-700/60 px-2.5 py-1 text-xs font-semibold shadow-xl whitespace-nowrap z-[60] animate-in fade-in zoom-in-95 duration-150"
+                          >
+                            <span>{item.name}</span>
+                            {item.badge && (
+                              <span className="badge-alert text-[9px] px-1.5 py-0.2">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </NavLink>
+                    )}
 
                     {/* Level 1 Accordion in Expanded Sidebar */}
                     {!collapsed && hasChildren && isSubmenuOpen && (

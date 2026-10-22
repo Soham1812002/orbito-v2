@@ -1,6 +1,3 @@
-import apiClient from "../../../utils/api";
-import { NormalizedListResult, listAdapter } from "../../../lib/listAdapter";
-
 export interface AuditLogItem {
   id: string;
   _id?: string;
@@ -27,16 +24,3 @@ export interface AuditLogQueryParams {
     userRole?: string;
   };
 }
-
-export const auditLogApi = {
-  getAuditLogs: async (
-    params: AuditLogQueryParams,
-    signal?: AbortSignal
-  ): Promise<NormalizedListResult<AuditLogItem>> => {
-    const response = await apiClient.get("/audit-logs", {
-      params,
-      signal
-    });
-    return listAdapter<AuditLogItem>(response.data);
-  }
-};

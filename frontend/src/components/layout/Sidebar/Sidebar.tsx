@@ -2,7 +2,7 @@ import React from "react";
 import { SidebarBrand } from "./SidebarBrand";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarFooter } from "./SidebarFooter";
-import { useSidebar } from "../../../context/SidebarContext";
+import { useSidebar } from "@/context/SidebarContext";
 
 export const Sidebar: React.FC = () => {
   const { collapsed, toggleCollapse, mobileOpen, closeMobile } = useSidebar();

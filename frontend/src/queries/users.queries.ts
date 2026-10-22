@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { usersApi } from "./Entity.api";
-import { UserFilters, CreateUserPayload, UpdateUserPayload } from "./Entity.types";
-import { showToast } from "../../lib/toast";
+import { usersApi } from "@/api/users.api";
+import { UserFilters, CreateUserPayload, UpdateUserPayload } from "@/types/users.types";
+import { showToast } from "@/lib/toast";
 
 export const userKeys = {
   all: ["users"] as const,

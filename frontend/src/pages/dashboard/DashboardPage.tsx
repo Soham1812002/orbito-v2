@@ -11,8 +11,8 @@ import {
   Lock,
   GitBranch
 } from "lucide-react";
-import { useAppSelector } from "../../redux/hooks";
-import { PageHeader } from "../../components/layout/PageHeader";
+import { useAppSelector } from "@/redux/hooks";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export const DashboardPage: React.FC = () => {
   const { currentUser } = useAppSelector((state) => state.user);

@@ -1,8 +1,8 @@
 import React from "react";
 import { X } from "lucide-react";
-import { InOrbitLogo } from "../../common/icons/InOrbitLogo";
-import { InOrbitMark } from "../../common/icons/InOrbitMark";
-import { AppIcon } from "../../common/icons/AppIcon";
+import { InOrbitLogo } from "@/components/common/icons/InOrbitLogo";
+import { InOrbitMark } from "@/components/common/icons/InOrbitMark";
+import { AppIcon } from "@/components/common/icons/AppIcon";
 
 export interface SidebarBrandProps {
   collapsed: boolean;

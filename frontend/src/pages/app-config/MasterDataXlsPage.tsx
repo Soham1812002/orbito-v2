@@ -10,10 +10,10 @@ import {
   Trash2,
   ArrowRight
 } from "lucide-react";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { Button } from "../../components/common/Button";
-import { showToast } from "../../lib/toast";
-import { appConfigApi } from "./appConfig.api";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/common/Button";
+import { showToast } from "@/lib/toast";
+import { appConfigApi } from "@/api/appConfig.api";
 
 interface ParsedRecord {
   category: string;

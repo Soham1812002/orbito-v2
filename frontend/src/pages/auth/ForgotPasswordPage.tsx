@@ -12,12 +12,12 @@ import {
   HelpCircle,
   Phone
 } from "lucide-react";
-import { Button } from "../../components/common/Button";
-import { Input } from "../../components/common/Input";
+import { Button } from "@/components/common/Button";
+import { Input } from "@/components/common/Input";
 import { AuthLayout } from "./AuthLayout";
-import { forgotPasswordSchema, ForgotPasswordSchema } from "./auth.schema";
-import { RecoveryMethod } from "./auth.types";
-import { showToast } from "../../lib/toast";
+import { forgotPasswordSchema, ForgotPasswordSchema } from "@/schemas/auth.schema";
+import { RecoveryMethod } from "@/types/auth.types";
+import { showToast } from "@/lib/toast";
 
 export const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();

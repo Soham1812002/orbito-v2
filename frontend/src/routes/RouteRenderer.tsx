@@ -1,7 +1,8 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import { AppRoute } from "./types";
-import { ProtectedRoute } from "./ProtectedRoute";
+import { AppRoute } from "@/routes/types";
+import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { PageLoadingFallback } from "@/components/feedback/PageLoadingFallback";
 
 interface RouteRendererProps {
   routes: AppRoute[];
@@ -10,7 +11,11 @@ interface RouteRendererProps {
 export const RouteRenderer: React.FC<RouteRendererProps> = ({ routes }) => {
   const renderRoutes = (routeList: AppRoute[]) => {
     return routeList.map((route, index) => {
-      let element = route.element;
+      let element = (
+        <Suspense fallback={<PageLoadingFallback />}>
+          {route.element}
+        </Suspense>
+      );
 
       if (route.protection) {
         element = (
@@ -37,3 +42,4 @@ export const RouteRenderer: React.FC<RouteRendererProps> = ({ routes }) => {
 
   return <Routes>{renderRoutes(routes)}</Routes>;
 };
+

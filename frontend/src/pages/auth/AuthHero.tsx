@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigation, ShieldCheck, Activity, CheckCircle2, Radio } from "lucide-react";
-import { InOrbitLogo } from "../../components/common/icons";
+import { InOrbitLogo } from "@/components/common/icons";
 
 interface FeatureCardProps {
   icon: React.ReactNode;

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, Sun, Moon, LogOut, Bell, Search, Shield, User as UserIcon } from "lucide-react";
-import { AppIcon } from "../common/icons/AppIcon";
-import { useSidebar } from "../../context/SidebarContext";
-import { useTheme } from "../../context/ThemeContext";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { logout } from "../../redux/userSlice";
+import { AppIcon } from "@/components/common/icons/AppIcon";
+import { useSidebar } from "@/context/SidebarContext";
+import { useTheme } from "@/context/ThemeContext";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { logout } from "@/redux/userSlice";
+import { GlobalSearchModal } from "./GlobalSearchModal";
 
 export const Header: React.FC = () => {
   const { toggleMobile } = useSidebar();
@@ -13,7 +14,20 @@ export const Header: React.FC = () => {
   const { currentUser } = useAppSelector((state) => state.user);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard shortcut listener for ⌘K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -41,30 +55,36 @@ export const Header: React.FC = () => {
   ).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 sm:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172B]/80 transition-colors">
-      {/* Left: Mobile Drawer Trigger & Search / Subtitle */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={toggleMobile}
-          className="md:hidden touch-target rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 focus-ring"
-          aria-label="Toggle navigation menu"
-        >
-          <AppIcon icon={Menu} size="lg" />
-        </button>
+    <>
+      <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 sm:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172B]/80 transition-colors">
+        {/* Left: Mobile Drawer Trigger & Search / Subtitle */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleMobile}
+            className="md:hidden touch-target rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 focus-ring"
+            aria-label="Toggle navigation menu"
+          >
+            <AppIcon icon={Menu} size="lg" />
+          </button>
 
-        {/* Global Search Bar (hidden on small mobile, visible on sm+) */}
-        <div className="hidden sm:flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 px-3 py-1.5 border border-slate-200 dark:border-slate-700/60 w-64 md:w-80">
-          <AppIcon icon={Search} size="xs" className="text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search fleet, vehicles, users..."
-            className="w-full bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none"
-          />
-          <kbd className="hidden md:inline-block rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
-            ⌘K
-          </kbd>
+          {/* Global Search Bar Trigger (hidden on small mobile, visible on sm+) */}
+          <button
+            type="button"
+            onClick={() => setSearchModalOpen(true)}
+            className="hidden sm:flex items-center justify-between gap-2 rounded-xl bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800/60 dark:hover:bg-slate-800 px-3 py-1.5 border border-slate-200 dark:border-slate-700/60 w-64 md:w-80 cursor-pointer text-left transition-colors"
+            aria-label="Search navigation items"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <AppIcon icon={Search} size="xs" className="text-slate-400 shrink-0" />
+              <span className="text-xs text-slate-400 truncate">
+                Search fleet, vehicles, users...
+              </span>
+            </div>
+            <kbd className="hidden md:inline-block rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shrink-0">
+              ⌘K
+            </kbd>
+          </button>
         </div>
-      </div>
 
       {/* Right Utility Group */}
       <div className="flex items-center gap-1.5 sm:gap-2">
@@ -145,5 +165,10 @@ export const Header: React.FC = () => {
         </div>
       </div>
     </header>
+    <GlobalSearchModal
+      isOpen={searchModalOpen}
+      onClose={() => setSearchModalOpen(false)}
+    />
+  </>
   );
 };

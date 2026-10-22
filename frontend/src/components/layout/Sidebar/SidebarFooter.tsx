@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
-import { AppIcon } from "../../common/icons/AppIcon";
-import { AuditLogIcon } from "../../common/icons/AuditLogIcon";
-import { SupportIcon } from "../../common/icons/SupportIcon";
-import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
-import { useTheme } from "../../../context/ThemeContext";
-import { logout } from "../../../redux/userSlice";
+import { AppIcon } from "@/components/common/icons/AppIcon";
+import { AuditLogIcon } from "@/components/common/icons/AuditLogIcon";
+import { SupportIcon } from "@/components/common/icons/SupportIcon";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { useTheme } from "@/context/ThemeContext";
+import { logout } from "@/redux/userSlice";
 
 export interface SidebarFooterProps {
   collapsed: boolean;

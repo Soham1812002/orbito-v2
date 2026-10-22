@@ -1,6 +1,6 @@
 import React from "react";
 import { AuthHero } from "./AuthHero";
-import { InOrbitLogo } from "../../components/common/icons";
+import { InOrbitLogo } from "@/components/common/icons";
 
 interface AuthLayoutProps {
   children: React.ReactNode;

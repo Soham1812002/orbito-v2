@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Navigate } from "react-router-dom";
-import { ConfigEntityPage } from "./ConfigEntityPage";
-import { systemConfigRegistry } from "./configs";
+import { ConfigEntityPage } from "@/pages/system-config/ConfigEntityPage";
+import { systemConfigRegistry } from "@/config/systemConfigs";
 
 export const DynamicConfigModulePage: React.FC = () => {
   const { moduleKey } = useParams<{ moduleKey: string }>();

@@ -1,13 +1,7 @@
-import apiClient from "../../utils/api";
+import apiClient from "@/utils/api";
+import { SystemConfigItem } from "@/types/config.types";
 
-export interface SystemConfigItem extends Record<string, any> {
-  id: string;
-  _id?: string;
-  moduleKey?: string;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type { SystemConfigItem };
 
 export const systemConfigApi = {
   getConfigs: async (moduleKey: string, signal?: AbortSignal): Promise<SystemConfigItem[]> => {

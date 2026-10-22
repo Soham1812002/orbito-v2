@@ -10,11 +10,11 @@ import {
   RefreshCw,
   Archive
 } from "lucide-react";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { Button } from "../../components/common/Button";
-import { Modal } from "../../components/common/Modal";
-import { showToast } from "../../lib/toast";
-import { appConfigApi, AppConfigItem } from "./appConfig.api";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
+import { showToast } from "@/lib/toast";
+import { appConfigApi, AppConfigItem } from "@/api/appConfig.api";
 
 export const RemoveEntityPage: React.FC = () => {
   const queryClient = useQueryClient();

@@ -19,9 +19,9 @@ import {
   CheckCircle2,
   HardDrive
 } from "lucide-react";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { appConfigApi } from "./appConfig.api";
-import { appConfigRegistry } from "./configs";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { appConfigApi } from "@/api/appConfig.api";
+import { appConfigRegistry } from "@/config/appConfigs";
 
 export const AppConfigHubPage: React.FC = () => {
   const { data: stats, isLoading } = useQuery({

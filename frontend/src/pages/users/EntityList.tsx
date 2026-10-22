@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { UserPlus, Filter } from "lucide-react";
-import { AppDataTable } from "../../components/common/AppDataTable";
-import { Button } from "../../components/common/Button";
-import { Modal } from "../../components/common/Modal";
+import { AppDataTable } from "@/components/common/AppDataTable";
+import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { getUserColumns } from "./Entity.columns";
 import { EntityForm } from "./EntityForm";
-import { useUserList, useDeleteUser } from "./Entity.queries";
-import { User } from "./Entity.types";
-import { useAppSelector } from "../../redux/hooks";
-import { hasPermission } from "../../utils/permissions";
+import { useUserList, useDeleteUser } from "@/queries/users.queries";
+import { User } from "@/types/users.types";
+import { useAppSelector } from "@/redux/hooks";
+import { hasPermission } from "@/utils/permissions";
 
-import { PageHeader } from "../../components/layout/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export const EntityList: React.FC = () => {
   const { currentUser } = useAppSelector((state) => state.user);

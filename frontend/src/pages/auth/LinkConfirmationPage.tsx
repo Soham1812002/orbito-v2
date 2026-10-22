@@ -8,10 +8,10 @@ import {
   Mail,
   MessageSquare
 } from "lucide-react";
-import { Button } from "../../components/common/Button";
+import { Button } from "@/components/common/Button";
 import { AuthLayout } from "./AuthLayout";
-import { LinkConfirmationState } from "./auth.types";
-import { showToast } from "../../lib/toast";
+import { LinkConfirmationState } from "@/types/auth.types";
+import { showToast } from "@/lib/toast";
 
 export const LinkConfirmationPage: React.FC = () => {
   const location = useLocation();

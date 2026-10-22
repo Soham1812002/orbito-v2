@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, ArrowLeft } from "lucide-react";
-import { AppIcon } from "../../common/icons/AppIcon";
+import { AppIcon } from "@/components/common/icons/AppIcon";
 
 export interface BreadcrumbItem {
   label: string;

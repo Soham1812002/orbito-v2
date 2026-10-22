@@ -1,29 +1,5 @@
-export interface ConfigFieldDef {
-  key: string;
-  label: string;
-  type: "text" | "number" | "select" | "textarea" | "checkbox" | "password";
-  required?: boolean;
-  placeholder?: string;
-  options?: { label: string; value: string }[];
-  helperText?: string;
-}
-
-export interface ConfigColumnDef {
-  key: string;
-  label: string;
-  render?: (val: any, row: any) => any;
-}
-
-export interface ConfigEntityConfig {
-  moduleKey: string;
-  title: string;
-  singularTitle: string;
-  category: "Organization Hierarchy" | "Fleet Assets" | "Hardware & Connectivity" | "Rules & Governance";
-  badge: string;
-  description: string;
-  columns: ConfigColumnDef[];
-  fields: ConfigFieldDef[];
-}
+import { ConfigEntityConfig } from "@/types/config.types";
+export type { ConfigEntityConfig } from "@/types/config.types";
 
 export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
   // 1. Companies

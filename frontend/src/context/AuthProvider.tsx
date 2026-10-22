@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { logout, updateUserProfile } from "../redux/userSlice";
-import apiClient from "../utils/api";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { logout, updateUserProfile } from "@/redux/userSlice";
+import apiClient from "@/utils/api";
 
 interface AuthContextType {
   isCheckingAuth: boolean;
@@ -30,12 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Invalidate any legacy demo offline tokens so real backend auth is required
-      if (activeToken.startsWith("demo-")) {
-        dispatch(logout());
-        if (isMounted) setIsCheckingAuth(false);
-        return;
-      }
+
 
       try {
         const response = await apiClient.get("/auth/me");

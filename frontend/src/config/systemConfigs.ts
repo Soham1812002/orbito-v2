@@ -1,4 +1,4 @@
-import { ConfigEntityConfig } from "./ConfigEntityPage";
+import { ConfigEntityConfig } from "@/types/config.types";
 
 export const systemConfigRegistry: Record<string, ConfigEntityConfig> = {
   // 1. Resellers

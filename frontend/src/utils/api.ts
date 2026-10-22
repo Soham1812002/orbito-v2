@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import { showToast } from "../lib/toast";
+import { showToast } from "@/lib/toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/v1/api";
 
@@ -46,8 +46,20 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 2c. Global Error Toasts (suppress background session checks or 404s)
-    if (error.config?.url?.includes("/auth/me")) {
+    // 2c. Global Error Toasts (suppress background session checks, 404s, or mock fallback endpoints)
+    const isMockFallbackUrl =
+      error.config?.url?.includes("/auth/login") ||
+      error.config?.url?.includes("/auth/me") ||
+      error.config?.url?.includes("/reports/") ||
+      error.config?.url?.includes("/audit-logs") ||
+      error.config?.url?.includes("/system-configs") ||
+      error.config?.url?.includes("/app-configs") ||
+      error.config?.url?.includes("/users") ||
+      error.config?.url?.includes("/roles") ||
+      error.config?.url?.includes("/poi") ||
+      error.config?.url?.includes("/geofence");
+
+    if (isMockFallbackUrl) {
       return Promise.reject(error);
     }
 

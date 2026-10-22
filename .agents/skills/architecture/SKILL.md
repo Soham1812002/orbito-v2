@@ -83,21 +83,36 @@ Keep state in 3 distinct places:
 
 ---
 
-### 3.2 The Standard 8-File Feature Pattern
+### 3.2 Clean Frontend Layer Architecture
 
-Every business entity (e.g. Users, Roles, Orders) in the frontend lives in `frontend/src/pages/<entity-name>/` with exactly 8 files:
+To maintain high maintainability, code clarity, and separation of concerns, the frontend codebase strictly enforces layer separation across top-level directories:
 
 ```text
-frontend/src/pages/<entity-name>/
-├── index.tsx          # 1. One-line router export: export { default } from "./EntityList";
-├── EntityList.tsx     # 2. Page layout: Search bar, filter tags, and AG Grid table
-├── EntityForm.tsx     # 3. Modal dialog: Form to Create, Edit, or Copy records
-├── Entity.api.ts      # 4. Pure API functions calling Axios (list, getById, create, update, delete)
-├── Entity.types.ts    # 5. TypeScript interfaces for entity, form payload, and filters
-├── Entity.schema.ts   # 6. Zod validation schema for form inputs
-├── Entity.queries.ts  # 7. React Query hooks (useEntityList, useCreateEntity, etc.)
-└── Entity.columns.tsx # 8. AG Grid column definitions (headers, badges, action buttons)
+frontend/src/
+├── api/             # Central REST API clients (pure Axios calls & resilient mock fallback)
+├── queries/         # TanStack React Query hooks (useUserList, mutations, query keys)
+├── schemas/         # Zod input validation schemas (userFormSchema, authSchema)
+├── types/           # TypeScript interfaces, DTO models, and data types
+├── config/          # Entity registries and static configuration matrices
+├── utils/           # Shared utility functions (Axios instance, RBAC permission checks)
+├── components/      # Common UI components (buttons, inputs, modals, layout, feedback)
+│   ├── common/      # AppDataTable, Button, Input, Modal, common icons
+│   ├── layout/      # AppLayout, Header, Sidebar, PageHeader, GlobalSearchModal
+│   └── feedback/    # PageLoadingFallback, loading skeletons
+└── pages/           # STRICTLY React components & UI views (no APIs, utils, or queries)
+    ├── auth/        # SignInPage, ForgotPasswordPage, LinkConfirmationPage
+    ├── dashboard/   # DashboardPage
+    ├── users/       # EntityList, EntityForm, Entity.columns
+    ├── reports/     # ReportsLayout, ReportsNavigatorPage, views/
+    ├── system-config/# SystemConfigLayout, Hub, Entity pages, AuditLogPage
+    └── app-config/  # AppConfigLayout, Hub, Entity pages, MasterDataXlsPage
 ```
+
+#### Core Frontend Principles:
+1. **Zero `../` Relative Imports**: All internal imports across components, pages, hooks, and services must use the `@/` path alias (e.g. `@/api/users.api`, `@/types/reports.types`, `@/components/common/Button`).
+2. **Components-Only in `pages/`**: No raw API callers, queries, schemas, or utility functions may live inside `pages/`. Keep `pages/` strictly for UI presentation and view coordination.
+3. **Lazy Loading with Route Suspense**: All page routes are lazily loaded via `React.lazy()`. Nested layouts (`AppLayout`, `ReportsLayout`, `SystemConfigLayout`, `AppConfigLayout`) must wrap `<Outlet />` inside `<Suspense fallback={<PageLoadingFallback />}>` so that navigation transitions smoothly render skeleton loaders without unmounting header or sidebar chrome.
+4. **Resilient Mock Fallback**: All API functions in `src/api/` attempt network requests first and gracefully fall back to rich in-memory mock datasets with simulated latency when the backend is offline.
 
 ### 3.3 File & Component Size Cap Rule (Max 1000 Lines)
 To preserve maintainability, readability, and code-review speed:

@@ -29,9 +29,19 @@ import {
   FileSpreadsheet,
   ShieldAlert,
   UserMinus,
-  MessageSquare
+  MessageSquare,
+  Compass,
+  Navigation,
+  SquareSlash,
+  Clock,
+  Flame,
+  Snowflake,
+  Mail,
+  FileCode2,
+  Activity,
+  CalendarDays
 } from "lucide-react";
-import { IconComponentType } from "../../common/icons/AppIcon";
+import { IconComponentType } from "@/components/common/icons/AppIcon";
 
 export type NavigationGroup =
   | "Identity & Access"
@@ -42,7 +52,13 @@ export type NavigationGroup =
   | "Operations & Governance"
   | "Organization Hierarchy"
   | "Fleet Assets"
-  | "Rules & Governance";
+  | "Rules & Governance"
+  | "Activity & Motion"
+  | "Telemetry & Sensors"
+  | "Operations & Tracking"
+  | "Communications & Logs"
+  | "Automation & Catalog"
+  | "Spatial Telematics";
 
 export interface NavSubItemConfig {
   key: string;
@@ -96,21 +112,230 @@ export const navigationSections: NavSectionConfig[] = [
         name: "Reports",
         path: "/reports",
         icon: FileText,
-        permission: "VIEW:REPORT"
+        permission: "VIEW:REPORT",
+        children: [
+          {
+            key: "reports-navigator",
+            name: "Reports Hub",
+            path: "/reports",
+            group: "Automation & Catalog",
+            icon: Grid
+          },
+          {
+            key: "travel-summary",
+            name: "Travel Summary",
+            path: "/reports/travel-summary",
+            group: "Activity & Motion",
+            icon: Compass
+          },
+          {
+            key: "trip-summary",
+            name: "Trip Summary",
+            path: "/reports/trip-summary",
+            group: "Activity & Motion",
+            icon: Navigation
+          },
+          {
+            key: "stoppage-summary",
+            name: "Stoppage Summary",
+            path: "/reports/stoppage-summary",
+            group: "Activity & Motion",
+            icon: SquareSlash
+          },
+          {
+            key: "idle-summary",
+            name: "Idle Summary",
+            path: "/reports/idle-summary",
+            group: "Activity & Motion",
+            icon: Clock
+          },
+          {
+            key: "ignition-summary",
+            name: "Ignition Summary",
+            path: "/reports/ignition-summary",
+            group: "Telemetry & Sensors",
+            icon: Flame
+          },
+          {
+            key: "inactive-summary",
+            name: "Inactive Summary",
+            path: "/reports/inactive-summary",
+            group: "Telemetry & Sensors",
+            icon: Radio
+          },
+          {
+            key: "ac-summary",
+            name: "AC Summary",
+            path: "/reports/ac-summary",
+            group: "Telemetry & Sensors",
+            icon: Snowflake
+          },
+          {
+            key: "digital-port",
+            name: "Digital Port Summary",
+            path: "/reports/digital-port-summary",
+            group: "Telemetry & Sensors",
+            icon: Cpu
+          },
+          {
+            key: "vehicle-status",
+            name: "Vehicle Status",
+            path: "/reports/vehicle-status",
+            group: "Operations & Tracking",
+            icon: Car
+          },
+          {
+            key: "vehicle-location",
+            name: "Vehicle Location",
+            path: "/reports/vehicle-location",
+            group: "Operations & Tracking",
+            icon: MapPin
+          },
+          {
+            key: "vehicle-activation",
+            name: "Vehicle Activation",
+            path: "/reports/vehicle-activation",
+            group: "Operations & Tracking",
+            icon: ShieldCheck
+          },
+          {
+            key: "sms-email",
+            name: "SMS & Email Logs",
+            path: "/reports/sms-email-summary",
+            group: "Communications & Logs",
+            icon: Mail
+          },
+          {
+            key: "device-log",
+            name: "Device Log",
+            path: "/reports/device-log",
+            group: "Communications & Logs",
+            icon: FileCode2
+          },
+          {
+            key: "system-log",
+            name: "System Log",
+            path: "/reports/system-log",
+            group: "Communications & Logs",
+            icon: Activity
+          },
+          {
+            key: "scheduled-reports",
+            name: "Scheduled Reports",
+            path: "/reports/scheduled-reports",
+            group: "Automation & Catalog",
+            icon: CalendarDays
+          }
+        ]
       },
       {
         key: "poi",
         name: "POI",
         path: "/poi",
         icon: MapPin,
-        permission: "VIEW:POI"
+        permission: "VIEW:POI",
+        children: [
+          {
+            key: "poi-hub",
+            name: "POI Hub",
+            path: "/poi",
+            icon: Compass,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "poi-overview",
+            name: "POI Overview",
+            path: "/poi/overview",
+            icon: MapPin,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "poi-add",
+            name: "Add POI",
+            path: "/poi/new",
+            icon: Navigation,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "poi-summary-a",
+            name: "POI Summary-A",
+            path: "/poi/summary-a",
+            icon: Clock,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "poi-summary-b",
+            name: "POI Summary-B",
+            path: "/poi/summary-b",
+            icon: Truck,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "poi-missed",
+            name: "Missed POI",
+            path: "/poi/missed",
+            icon: ShieldAlert,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "poi-collection",
+            name: "Collection Address",
+            path: "/poi/collection-address",
+            icon: FileSpreadsheet,
+            group: "Spatial Telematics"
+          }
+        ]
       },
       {
         key: "geofence",
         name: "Geofence",
         path: "/geofence",
         icon: Map,
-        permission: "VIEW:GEOFENCE"
+        permission: "VIEW:GEOFENCE",
+        children: [
+          {
+            key: "geofence-hub",
+            name: "Geofence Hub",
+            path: "/geofence",
+            icon: Compass,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "geofence-overview",
+            name: "Geofence Directory",
+            path: "/geofence/overview",
+            icon: Map,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "geofence-new",
+            name: "Create Geofence",
+            path: "/geofence/new",
+            icon: Navigation,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "geofence-summary-a",
+            name: "Zone Activity (A)",
+            path: "/geofence/summary-a",
+            icon: Activity,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "geofence-summary-b",
+            name: "Vehicle Crossings (B)",
+            path: "/geofence/summary-b",
+            icon: Truck,
+            group: "Spatial Telematics"
+          },
+          {
+            key: "geofence-out",
+            name: "Out-of-Geofence",
+            path: "/geofence/out-of-geofence",
+            icon: ShieldAlert,
+            group: "Spatial Telematics"
+          }
+        ]
       },
       {
         key: "alerts",

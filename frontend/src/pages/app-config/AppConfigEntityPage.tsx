@@ -11,12 +11,12 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { Button } from "../../components/common/Button";
-import { Modal } from "../../components/common/Modal";
-import { showToast } from "../../lib/toast";
-import { appConfigApi, AppConfigItem } from "./appConfig.api";
-import { ConfigEntityConfig } from "./configs";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
+import { showToast } from "@/lib/toast";
+import { appConfigApi, AppConfigItem } from "@/api/appConfig.api";
+import { ConfigEntityConfig } from "@/types/config.types";
 import { AppConfigFormModal } from "./AppConfigFormModal";
 
 export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ config }) => {

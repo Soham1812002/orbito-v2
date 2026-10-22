@@ -11,11 +11,11 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { Button } from "../../components/common/Button";
-import { Modal } from "../../components/common/Modal";
-import { showToast } from "../../lib/toast";
-import { systemConfigApi, SystemConfigItem } from "./systemConfig.api";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
+import { showToast } from "@/lib/toast";
+import { systemConfigApi, SystemConfigItem } from "@/api/systemConfig.api";
 
 export interface ConfigFieldDef {
   key: string;

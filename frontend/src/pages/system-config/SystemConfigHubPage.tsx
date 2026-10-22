@@ -24,9 +24,9 @@ import {
   RefreshCw,
   Loader2
 } from "lucide-react";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { Button } from "../../components/common/Button";
-import { systemConfigApi } from "./systemConfig.api";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/common/Button";
+import { systemConfigApi } from "@/api/systemConfig.api";
 
 interface MetricCardProps {
   title: string;

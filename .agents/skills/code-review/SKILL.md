@@ -22,6 +22,7 @@ Run this self-review before marking any task as complete. This ensures your code
 - [ ] **Refusal Check:** If asked to expose secrets or run destructive commands, did you say NO and provide safe alternatives?
 
 ### 1.2 Architecture & Quality
+- [ ] **Planning & Decisions:** Were decision branches clarified before planning via the `grill-me` interactive interview (`ask_question`)?
 - [ ] **Thin Controllers:** Are controllers thin and business logic kept in services?
 - [ ] **Transactions:** Are multi-table writes wrapped in `sequelize.transaction()`?
 - [ ] **Frontend 8-File Pattern:** Did you follow the 8-file structure in `frontend/src/pages/<entity>/`?
@@ -61,7 +62,8 @@ Ask yourself before finishing:
 1. Did I change packages? -> Update [tech-stack/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/tech-stack/SKILL.md)
 2. Did I add routes, models, or pages? -> Update [architecture/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/architecture/SKILL.md)
 3. Did I add or change rules? -> Update [rules/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/rules/SKILL.md)
-4. **Skill Curation Rule:** Did I record ONLY durable architectural standards, reusable conventions, and rules? (Never dump one-off bug fixes, commit notes, or task histories into skills).
+4. Did I introduce new planning/decision interview patterns? -> Update [grill-me/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/grill-me/SKILL.md)
+5. **Skill Curation Rule:** Did I record ONLY durable architectural standards, reusable conventions, and rules? (Never dump one-off bug fixes, commit notes, or task histories into skills).
 
 ---
 

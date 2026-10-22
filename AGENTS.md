@@ -40,20 +40,29 @@ Orbito v2 has dedicated skills in the [`.agents/skills/`](file:///Users/soham18/
 | **Code Review** | [code-review/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/code-review/SKILL.md) | The pre-flight checklist, build verification commands, and response format to use before completing a task. |
 | **UI Layout Executor** | [ui-layout-executor/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/ui-layout-executor/SKILL.md) | The standard layout system, design tokens, common utility classes, icons module, and responsive guidelines. |
 | **Backend Pattern Executor** | [backend-pattern-executor/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/backend-pattern-executor/SKILL.md) | The strict 5-layer backend pattern, zero-drift PostgreSQL migrations, Sequelize ORM standards, DTO validation, transactions, and seeding. |
+| **Grill Me** | [grill-me/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/grill-me/SKILL.md) | Relentless interactive interview before or during planning using `ask_question` to resolve decision trees and eliminate ambiguity. |
 
 ---
 
 ## 4. Step-by-Step Workflow
 
-Follow these 5 steps for every task:
+Follow these 6 steps for every task:
 
 ```text
 1. Understand  ->  Read files & check relevant skill in .agents/skills/
-2. Plan        ->  Make a short plan of which files to create or change
-3. Code        ->  Follow the backend 5 layers & frontend 8-file pattern
-4. Verify      ->  Run build and typecheck commands in both workspaces
-5. Update Docs ->  Update the relevant skill files in .agents/skills/
+2. Grill       ->  Relentlessly interview user (via ask_question) to resolve decision trees
+3. Plan        ->  Make a short plan of which files to create or change
+4. Code        ->  Follow the backend 5 layers & frontend 8-file pattern
+5. Verify      ->  Run build and typecheck commands in both workspaces
+6. Update Docs ->  Update the relevant skill files in .agents/skills/
 ```
+
+### 4.1 When and How to Grill (Step 2)
+Before writing code or finalizing a plan for any non-trivial feature, architectural shift, or ambiguous requirement, activate [**Grill Me**](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/grill-me/SKILL.md):
+- **Inspect first:** Read existing codebase files, schemas, and routes so you don't ask what is already known.
+- **Interactive questions only:** Always use the `ask_question` tool (modal popup with 2–4 concrete choices). Never ask questions as raw markdown text.
+- **One at a time:** Ask one question per turn, acknowledge the choice in 1–2 sentences, and follow each branch of the decision tree to completion.
+- **Synthesize:** Once all branches are settled, summarize decisions and proceed directly to Step 3 (Plan).
 
 ### Verification Commands
 Always run these in terminal before finishing:
@@ -103,6 +112,7 @@ When adding any feature (e.g. Users, Roles, Products), create a folder in `front
 ## 6. Definition of Done & Response Format
 
 A task is complete only when:
+- [ ] Requirements and decision branches clarified via grill interview (`grill-me`) before planning.
 - [ ] Code follows the backend 5 layers and frontend 8-file pattern.
 - [ ] Backend compiles cleanly (`cd backend && npm run build`).
 - [ ] Frontend compiles cleanly (`cd frontend && npm run build`).

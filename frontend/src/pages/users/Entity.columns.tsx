@@ -2,7 +2,7 @@ import React from "react";
 import { ColDef, ICellRendererParams } from "ag-grid-community";
 import dayjs from "dayjs";
 import { Edit2, Trash2, Copy } from "lucide-react";
-import { User } from "./Entity.types";
+import { User } from "@/types/users.types";
 
 interface ColumnOptions {
   onEdit: (user: User) => void;

@@ -2,7 +2,7 @@ import React from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, GridReadyEvent, ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import { Search, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 

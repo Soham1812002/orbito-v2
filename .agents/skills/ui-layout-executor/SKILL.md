@@ -206,17 +206,21 @@ graph TD
 1. **Config Definition (`NavSubItemConfig`):**
    - Populate `children: NavSubItemConfig[]` under the parent item in `navigation.config.ts`.
    - Each sub-item defines `key`, `name`, `path`, optional `icon`, `permission`, and `badge`.
-2. **Expanded Sidebar Mode (256px):**
-   - Renders an accordion chevron button with accessible `aria-expanded` and `aria-controls`.
-   - Auto-expands whenever the user is actively on any child sub-route.
-   - Sub-items render with subtle indent (`pl-10`), smooth transition, and a left accent indicator pill on the active route.
+2. **Expanded Sidebar Mode (256px) & Dropdown Accordion:**
+   - Avoid creating redundant secondary nested sidebars for features with multiple child views (such as Fleet Reports). Instead, promote child views into the main sidebar's collapsible dropdown accordion.
+   - **Single Active Tab State:** Never use `<NavLink to="#">` for accordion parents, as React Router marks all hash links active simultaneously. Use a `<button>` parent toggle and compute active state strictly from `location.pathname.startsWith(item.path)` or exact child matching so only the current section is highlighted.
+   - Auto-expand the matching section and collapse other sections on route changes.
 3. **Collapsed Sidebar Mode (80px Mini):**
    - Clicking or hovering triggers a floating flyout popover menu (`w-80 rounded-2xl bg-[#0F172B] shadow-2xl border border-[#1D293D] p-3.5`).
    - Includes a live real-time filter search bar for instant keyboard-friendly navigation.
    - Uses an invisible hover bridge (`before:content-[''] before:absolute before:-left-3 before:top-0 before:w-3 before:h-full`) so mouse movement from sidebar to popover never flickers or closes unexpectedly.
-4. **Contextual In-Module Sub-Sidebar Shell:**
-   - Complex domains implement a layout wrapper (e.g. `SystemConfigLayout.tsx`) with a dedicated secondary sidebar (240px).
-   - Features structured category groupings (e.g. *Identity & Access*, *Connectivity*, *Hardware*), live module search, collapse toggle pin, and responsive mobile bottom sheet or slide-over drawer.
+4. **Tailwind CSS v4 Dark Mode Standard:**
+   - In Tailwind CSS v4, manual class-based dark mode (`.dark` on `<html>`) requires `@custom-variant dark (&:where(.dark, .dark *));` declared in `index.css` right after `@import "tailwindcss";`. Without this directive, `dark:` utility variants strictly adhere to the OS `@media` query and ignore manual class toggles.
+5. **Clean Enterprise Header Typography (No Cluttering Pills):**
+   - Keep page headers and card titles minimal and uncluttered. Avoid adding extraneous italic or cyan pill badges next to `h1`/`h2` titles. A clean bold title paired with a concise muted subtitle creates an enterprise-grade aesthetic.
+6. **Glassmorphic Global Search Command Palette (`GlobalSearchModal`):**
+   - Provide an accessible command palette triggered by top search click or `⌘K` / `Ctrl+K`.
+   - Feature a semi-transparent blurred backdrop (`backdrop-blur-md`), matching substring text highlighting (`<span className="font-bold text-blue-600 bg-blue-500/15">`), trailing navigation action icons (`ArrowRight`), and full keyboard navigation (`↑`/`↓`/`↵`/`Esc`).
 
 
 ---
@@ -313,5 +317,21 @@ To ensure continuous improvement and permanently avoid repeating mistakes:
 | **DO** ensure all buttons have `.focus-ring` for keyboard users. | **DON'T** remove focus outlines without providing a visible focus indicator. |
 | **DO** use `h1` in `PageHeader` and sequential `h2`/`h3` in sections. | **DON'T** skip heading levels (`h1` -> `h4`) which breaks screen readers. |
 | **DO** update skills after completing any feature to capture lessons learned. | **DON'T** finish a task without recording new patterns or resolved mistakes. |
-| **DO** run `cd frontend && npm run build` before finishing. | **DON'T** introduce TypeScript errors or suppress them with `@ts-ignore`. |
 | **DO** decompose complex configuration pages into extracted modals (`FormModal`), sub-layouts, and domain tools to keep files <= 400 lines. | **DON'T** let component files balloon over 400 lines by inlining forms, tables, and file parsers together. |
+| **DO** use the single main sidebar accordion / dropdown for all sub-navigation items and keep layout wrappers as clean pass-through `<Outlet />` shells with standard `.layout-container` padding. | **DON'T** introduce secondary nested sidebars into feature layouts (`ReportsLayout`, `SystemConfigLayout`, `AppConfigLayout`, `PoiLayout`, `GeofenceLayout`), which consume horizontal viewport space and clutter the interface. |
+| **DO** implement dual-pane map layouts (Vector Map Canvas on the left + Numbered Form Drawer on the right) for spatial telematics editing (POI placement, Geofence radial & polygon drawing). | **DON'T** hide map canvas behind disconnected modal popups or separate tabs when configuring geocoded boundaries. |
+| **DO** provide resilient client-side mock fallback stores with realistic regional presets (e.g., logistics corridors, coordinates) and CSV/Excel export when backend endpoints are unavailable. | **DON'T** let frontend screens crash with uncaught 500/404 errors or display empty broken states when APIs are in design/mock mode. |
+
+---
+
+## 12. Spatial Telematics & Map Canvas Patterns
+
+When building POI (Points of Interest), Geofencing, or Live Fleet Tracking views:
+
+1. **Dual-Pane Layout Architecture:**
+   - **Left Canvas (`flex-1 min-h-[500px]`):** Vector map with radar grid background (`bg-slate-950/80` with dark blue gradient grid lines), interactive click-to-pin or draw-boundary controls, floating search bar, quick corridor chips, and coordinate readout badge.
+   - **Right Drawer (`w-full lg:w-[420px]`):** Numbered collapsible or step-based form sections (1. General Info, 2. Location & Coordinates, 3. Classification / Surveillance Triggers) with validation rules and floating/sticky action footer.
+2. **Radial vs. Polygon Geometry Controls:**
+   - Provide toggle buttons for Circular Radius (with buffer radius slider 100m–5000m) and Custom Polygon (with interactive vertex list and reset controls).
+3. **Export Integration:**
+   - All spatial directories and dwell reports must include one-click Excel/CSV export formatting timestamps into `HH:mm:ss`, coordinates into `Lat, Lng`, and compliance status badges into clean tabular rows.

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Modal } from "../../components/common/Modal";
-import { Button } from "../../components/common/Button";
-import { ConfigEntityConfig } from "./configs";
-import { appConfigApi } from "./appConfig.api";
+import { Modal } from "@/components/common/Modal";
+import { Button } from "@/components/common/Button";
+import { ConfigEntityConfig } from "@/types/config.types";
+import { appConfigApi } from "@/api/appConfig.api";
 
 interface AppConfigFormModalProps {
   isOpen: boolean;

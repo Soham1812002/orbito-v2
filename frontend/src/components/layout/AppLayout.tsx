@@ -1,12 +1,10 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
-import { Header } from "./Header";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
+import { PageLoadingFallback } from "@/components/feedback/PageLoadingFallback";
 
 export const AppLayout: React.FC = () => {
-  const location = useLocation();
-  const isFullBleedLayout = location.pathname.startsWith("/system-config");
-
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-[#070B14] text-slate-900 dark:text-slate-100 transition-colors">
       {/* Skip-to-content accessibility link (WCAG 2.1 AA) */}
@@ -25,11 +23,14 @@ export const AppLayout: React.FC = () => {
         <Header />
         <main
           id="main-content"
-          className={`flex-1 overflow-y-auto ${isFullBleedLayout ? "h-full" : "layout-container"}`}
+          className="flex-1 overflow-y-auto layout-container"
         >
-          <Outlet />
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
   );
 };
+
