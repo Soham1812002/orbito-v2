@@ -60,4 +60,13 @@ export class UserController {
       next(err);
     }
   }
+
+  static async export(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const paginationParams = parsePaginationParams(req);
+      await UserService.streamExport(res, paginationParams);
+    } catch (err) {
+      next(err);
+    }
+  }
 }

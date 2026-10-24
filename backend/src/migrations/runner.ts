@@ -4,6 +4,13 @@ import { logger } from "../configs/logger.js";
 import * as initialSchema from "./001_initial_schema.js";
 import * as auditAndSystemConfig from "./002_audit_and_system_config.js";
 import * as appConfig from "./003_app_config.js";
+import * as maintenanceAndExpenses from "./004_maintenance_and_expenses.js";
+import * as alertsManagement from "./005_alerts_management.js";
+import * as advanceOperationsPhase1 from "./006_advance_operations_phase1.js";
+import * as coreFleetAndUserGroups from "./007_core_fleet_and_user_groups.js";
+import * as licensingAndEntitlements from "./008_licensing_and_entitlements.js";
+import * as geofenceAndPoi from "./009_geofence_and_poi.js";
+import * as refreshTokens from "./010_refresh_tokens.js";
 
 interface MigrationDefinition {
   name: string;
@@ -14,7 +21,14 @@ interface MigrationDefinition {
 const AVAILABLE_MIGRATIONS: MigrationDefinition[] = [
   initialSchema,
   auditAndSystemConfig,
-  appConfig
+  appConfig,
+  maintenanceAndExpenses,
+  alertsManagement,
+  advanceOperationsPhase1,
+  coreFleetAndUserGroups,
+  licensingAndEntitlements,
+  geofenceAndPoi,
+  refreshTokens
 ];
 
 export async function ensureMetaTable(): Promise<void> {

@@ -135,8 +135,6 @@ export const CollectionAddressPage: React.FC = () => {
           { label: "Collection Address" }
         ]}
         title="Collection Address Dispatch Summary"
-        badge="LOGISTICS ADHERENCE"
-        badgeVariant="cyan"
         description="Vehicle-level collection visits, missed addresses, and scheduled totals organized in an Excel-ready summary."
       />
 
@@ -153,7 +151,7 @@ export const CollectionAddressPage: React.FC = () => {
         placeholder="Filter by vehicle registration or branch..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

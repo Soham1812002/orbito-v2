@@ -179,8 +179,6 @@ export const GeofenceSummaryBPage: React.FC = () => {
           { label: "Vehicle Crossings" }
         ]}
         title="Vehicle Geofence Zone Crossings"
-        badge="TELEMETRY AUDIT"
-        badgeVariant="cyan"
         description="Audit chronological vehicle entry and exit timestamps, entry speeds, and dwell durations."
       />
 
@@ -193,7 +191,7 @@ export const GeofenceSummaryBPage: React.FC = () => {
         placeholder="Filter by vehicle registration, model, or geofence..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

@@ -7,6 +7,8 @@ import { LoginDto, RegisterDto, ChangePasswordDto } from "../dtos/auth.dto.js";
 const router = Router();
 
 router.post("/login", validateDto(LoginDto), AuthController.login);
+router.post("/refresh", AuthController.refresh);
+router.post("/logout", AuthController.logout);
 router.post("/register", validateDto(RegisterDto), AuthController.register);
 router.get("/me", authenticate, AuthController.me);
 router.post("/change-password", authenticate, validateDto(ChangePasswordDto), AuthController.changePassword);

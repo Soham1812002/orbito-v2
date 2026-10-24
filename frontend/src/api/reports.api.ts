@@ -1,4 +1,5 @@
 import apiClient from "@/utils/api";
+import { downloadStreamFile } from "@/utils/streamingExport";
 import {
   TravelSummaryRow,
   TripOverviewRow,
@@ -474,5 +475,18 @@ export const reportsApi = {
     }
     await simulateLatency();
     return { vehicleId, events: mockIgnitionEvents };
+  },
+
+  // 25. Dynamic Streaming Export
+  exportReport: async (
+    reportType: string,
+    filters?: ReportFilterState
+  ): Promise<void> => {
+    const slug = reportType.toLowerCase().replace(/\s+/g, "-");
+    await downloadStreamFile(
+      `/reports/${slug}/export`,
+      `${slug}_export_${Date.now()}.csv`,
+      filters as any
+    );
   }
 };

@@ -7,6 +7,7 @@ import { AppDataTable } from "@/components/common/AppDataTable";
 import { GeofenceFilterBar } from "./components/GeofenceFilterBar";
 import { useGeofenceList, useDeleteGeofence } from "@/queries/geofence.queries";
 import { GeofenceItem } from "@/types/geofence.types";
+import { geofenceApi } from "@/api/geofence.api";
 import { showToast } from "@/lib/toast";
 
 export const GeofenceOverviewPage: React.FC = () => {
@@ -36,37 +37,13 @@ export const GeofenceOverviewPage: React.FC = () => {
     }
   };
 
-  const handleExportExcel = () => {
-    if (!data?.items || data.items.length === 0) {
-      showToast.error("No data available to export");
-      return;
-    }
-
+  const handleExportExcel = async () => {
     try {
-      const headers = ["Company", "Branch", "Geofence Name", "Type", "Category", "Radius (m)", "Speed Limit (km/h)", "Assigned Vehicles", "Alert on Enter", "Alert on Exit", "Status"];
-      const rows = data.items.map((g) => [
-        `"${g.company}"`,
-        `"${g.branch}"`,
-        `"${g.name}"`,
-        `"${g.type}"`,
-        `"${g.category}"`,
-        g.radiusMeters || "Polygon",
-        g.speedLimitKmh || "None",
-        g.assignedVehiclesCount,
-        g.alertOnEnter ? "Yes" : "No",
-        g.alertOnExit ? "Yes" : "No",
-        g.isActive ? "Active" : "Inactive"
-      ]);
-
-      const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `geofence_directory_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await geofenceApi.exportGeofences({
+        search: searchTerm || undefined,
+        type: selectedType !== "ALL" ? selectedType : undefined,
+        category: selectedCategory !== "ALL" ? selectedCategory : undefined
+      });
       showToast.success("Geofence Directory exported successfully!");
     } catch {
       showToast.error("Failed to export Geofence data");
@@ -219,8 +196,6 @@ export const GeofenceOverviewPage: React.FC = () => {
           { label: "Geofence Directory" }
         ]}
         title="Geofence Boundary Directory"
-        badge={`${data?.total || 0} BOUNDARIES`}
-        badgeVariant="cyan"
         description="Monitor and configure active boundary zones, speed limits, vehicle assignments, and alert triggers."
       />
 
@@ -238,7 +213,7 @@ export const GeofenceOverviewPage: React.FC = () => {
         isRefreshing={isFetching}
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data?.items || []}
           columnDefs={columnDefs}

@@ -23,6 +23,8 @@ Run this self-review before marking any task as complete. This ensures your code
 
 ### 1.2 Architecture & Quality
 - [ ] **Planning & Decisions:** Were decision branches clarified before planning via the `grill-me` interactive interview (`ask_question`)?
+- [ ] **Overengineering & Simplification:** Did you review the plan and diff using `overengineering-review` for needless abstractions, dead flexibility, single-caller pass-throughs, or replaceable dependencies?
+- [ ] **Browser QA & Visual Proof:** For UI tasks, was the flow verified in browser across viewports using `playwright-qa` with evidence screenshots and zero console errors?
 - [ ] **Thin Controllers:** Are controllers thin and business logic kept in services?
 - [ ] **Transactions:** Are multi-table writes wrapped in `sequelize.transaction()`?
 - [ ] **Frontend 8-File Pattern:** Did you follow the 8-file structure in `frontend/src/pages/<entity>/`?
@@ -63,7 +65,9 @@ Ask yourself before finishing:
 2. Did I add routes, models, or pages? -> Update [architecture/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/architecture/SKILL.md)
 3. Did I add or change rules? -> Update [rules/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/rules/SKILL.md)
 4. Did I introduce new planning/decision interview patterns? -> Update [grill-me/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/grill-me/SKILL.md)
-5. **Skill Curation Rule:** Did I record ONLY durable architectural standards, reusable conventions, and rules? (Never dump one-off bug fixes, commit notes, or task histories into skills).
+5. Did I introduce or refine simplification / anti-overengineering patterns? -> Update [overengineering-review/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/overengineering-review/SKILL.md)
+6. Did I introduce or refine browser QA or Playwright testing workflows? -> Update [playwright-qa/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/playwright-qa/SKILL.md)
+7. **Skill Curation Rule:** Did I record ONLY durable architectural standards, reusable conventions, and rules? (Never dump one-off bug fixes, commit notes, or task histories into skills).
 
 ---
 

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ColDef } from "ag-grid-community";
 import {
   FileSpreadsheet,
   Download,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/common/Button";
+import { AppDataTable } from "@/components/common/AppDataTable";
 import { showToast } from "@/lib/toast";
 import { appConfigApi } from "@/api/appConfig.api";
 
@@ -131,6 +133,32 @@ export const MasterDataXlsPage: React.FC = () => {
     importMutation.mutate(parsedRows);
   };
 
+  const parsedColumns = useMemo<ColDef<ParsedRecord>[]>(
+    () => [
+      { headerName: "Category", field: "category", minWidth: 140 },
+      {
+        headerName: "Item Code",
+        field: "itemCode",
+        minWidth: 150,
+        cellRenderer: (params: any) => (
+          <span className="font-mono text-xs font-semibold">{params.value}</span>
+        )
+      },
+      { headerName: "Item Name", field: "itemName", minWidth: 160 },
+      { headerName: "Order", field: "displayOrder", minWidth: 90 },
+      { headerName: "Description", field: "description", minWidth: 200, flex: 1 },
+      {
+        headerName: "Status",
+        field: "status",
+        minWidth: 110,
+        cellRenderer: (params: any) => (
+          <span className="badge-emerald">{params.value}</span>
+        )
+      }
+    ],
+    []
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -138,7 +166,7 @@ export const MasterDataXlsPage: React.FC = () => {
         description="Batch upload lookups, sensor calibration parameters, and fleet categories using spreadsheets."
         badge="BULK IMPORT SUITE"
         actions={
-          <Button variant="secondary" onClick={handleDownloadTemplate}>
+          <Button variant="secondary" size="sm" onClick={handleDownloadTemplate}>
             <Download className="w-4 h-4 mr-2" />
             Download Sample Template
           </Button>
@@ -216,6 +244,7 @@ export const MasterDataXlsPage: React.FC = () => {
               </Button>
               <Button
                 variant="primary"
+                size="sm"
                 onClick={handleCommitImport}
                 isLoading={importMutation.isPending}
               >
@@ -225,39 +254,11 @@ export const MasterDataXlsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-200 dark:border-[#1D293D] rounded-xl">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-[#0b1329] text-slate-500 border-b border-slate-200 dark:border-[#1D293D]">
-                <tr>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Item Code</th>
-                  <th className="px-4 py-3">Item Name</th>
-                  <th className="px-4 py-3">Order</th>
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-[#1D293D]/60 text-slate-800 dark:text-slate-200">
-                {parsedRows.slice(0, 10).map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-[#162244]/30">
-                    <td className="px-4 py-2.5 font-medium">{row.category}</td>
-                    <td className="px-4 py-2.5 font-mono">{row.itemCode}</td>
-                    <td className="px-4 py-2.5">{row.itemName}</td>
-                    <td className="px-4 py-2.5">{row.displayOrder}</td>
-                    <td className="px-4 py-2.5 text-slate-500 truncate max-w-xs">{row.description}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="badge-emerald">{row.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {parsedRows.length > 10 && (
-            <p className="text-xs text-slate-500 text-center">
-              Showing first 10 rows of {parsedRows.length} total parsed records.
-            </p>
-          )}
+          <AppDataTable<ParsedRecord>
+            rowData={parsedRows}
+            columnDefs={parsedColumns}
+            total={parsedRows.length}
+          />
         </div>
       )}
     </div>

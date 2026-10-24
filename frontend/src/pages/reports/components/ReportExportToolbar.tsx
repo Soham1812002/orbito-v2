@@ -1,10 +1,13 @@
 import React from "react";
 import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import toast from "react-hot-toast";
+import { reportsApi } from "@/api/reports.api";
 
 interface ReportExportToolbarProps {
   totalCount: number;
   reportTitle: string;
+  reportType?: string;
+  filters?: any;
   dataToExport?: any[];
   extraActions?: React.ReactNode;
 }
@@ -12,10 +15,22 @@ interface ReportExportToolbarProps {
 export const ReportExportToolbar: React.FC<ReportExportToolbarProps> = ({
   totalCount,
   reportTitle,
+  reportType,
+  filters,
   dataToExport = [],
   extraActions
 }) => {
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
+    if (reportType) {
+      try {
+        await reportsApi.exportReport(reportType, filters);
+        toast.success(`${reportTitle} streaming export completed!`);
+        return;
+      } catch {
+        // Fallback to client generation if server export fails
+      }
+    }
+
     if (!dataToExport || dataToExport.length === 0) {
       toast.error("No data available to export");
       return;
@@ -51,8 +66,8 @@ export const ReportExportToolbar: React.FC<ReportExportToolbarProps> = ({
     }
   };
 
-  const handleExportExcel = () => {
-    handleExportCsv(); // Provide CSV with spreadsheet mime
+  const handleExportExcel = async () => {
+    await handleExportCsv(); // Provide CSV with spreadsheet format
   };
 
   const handlePrint = () => {

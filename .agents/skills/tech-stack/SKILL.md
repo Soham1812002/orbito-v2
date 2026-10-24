@@ -41,6 +41,19 @@ Orbito v2 has two main workspaces:
 | **Dayjs** | `^1.11` | Date and time formatting. |
 | **i18next & react-i18next** | `^24.2 / ^15.4` | Multi-language translation support. |
 | **clsx & tailwind-merge** | `^2.1 / ^3.0` | Combines Tailwind classes cleanly. |
+| **MapLibre GL JS** | `^6.15` | GPU-accelerated WebGL vector map engine for 60 FPS telematics, vehicle rotation, and Indian logistics corridors. |
+
+### MapLibre GL JS Vite Web Worker Rule
+In Vite environments, MapLibre GL JS Web Worker cannot be automatically resolved from `import.meta.url` due to esbuild pre-bundling. It must be explicitly configured using Vite's `?worker&url` query syntax:
+```typescript
+import * as maplibregl from "maplibre-gl";
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
+if (typeof window !== "undefined" && typeof (maplibregl as any).setWorkerUrl === "function") {
+  (maplibregl as any).setWorkerUrl(workerUrl);
+}
+```
+Without `setWorkerUrl(workerUrl)`, Vite attempts to fetch `node_modules/.vite/deps/maplibre-gl-worker.mjs` returning HTTP 404, which halts vector tile decompression and leaves the map canvas blank.
 
 ### Frontend Commands
 

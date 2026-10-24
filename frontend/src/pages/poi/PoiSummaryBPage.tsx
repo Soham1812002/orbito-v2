@@ -156,8 +156,6 @@ export const PoiSummaryBPage: React.FC = () => {
           { label: "POI Summary-B" }
         ]}
         title="Vehicle POI Stop Summary"
-        badge="VEHICLE LEVEL"
-        badgeVariant="cyan"
         description="Vehicle-level visit counts and accumulated stop time are organized in a compact, Excel-ready operational summary."
       />
 
@@ -174,7 +172,7 @@ export const PoiSummaryBPage: React.FC = () => {
         placeholder="Filter by vehicle registration, model, or IMEI..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

@@ -7,7 +7,8 @@ import {
   IsOptional,
   IsBoolean,
   IsArray,
-  IsUUID
+  IsUUID,
+  IsObject
 } from "class-validator";
 
 export class CreateUserDto {
@@ -33,8 +34,60 @@ export class CreateUserDto {
   lastName!: string;
 
   @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  branch?: string;
+
+  @IsOptional()
+  @IsString()
+  reseller?: string;
+
+  @IsOptional()
+  @IsString()
+  groupId?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  allocationGroup?: string;
+
+  @IsOptional()
+  @IsString()
+  expiryDate?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @IsOptional()
+  @IsString()
+  dateFormat?: string;
+
+  @IsOptional()
+  @IsString()
+  measurementUnit?: string;
+
+  @IsOptional()
+  @IsObject()
+  features?: Record<string, any>;
 
   @IsOptional()
   @IsArray()
@@ -65,8 +118,60 @@ export class UpdateUserDto {
   lastName?: string;
 
   @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  branch?: string;
+
+  @IsOptional()
+  @IsString()
+  reseller?: string;
+
+  @IsOptional()
+  @IsString()
+  groupId?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  allocationGroup?: string;
+
+  @IsOptional()
+  @IsString()
+  expiryDate?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @IsOptional()
+  @IsString()
+  dateFormat?: string;
+
+  @IsOptional()
+  @IsString()
+  measurementUnit?: string;
+
+  @IsOptional()
+  @IsObject()
+  features?: Record<string, any>;
 
   @IsOptional()
   @IsArray()

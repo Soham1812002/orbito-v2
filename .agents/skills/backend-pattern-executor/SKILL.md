@@ -12,7 +12,7 @@ description: >-
 This guide documents the mandatory architecture, workflow, coding standards, database patterns, and security guardrails established for the **Orbito v2 Backend API** (Node.js 22+, Express 5, TypeScript 5.7, Sequelize 6 ORM, PostgreSQL 16).
 
 > [!IMPORTANT]
-> **Mandatory Rule:** Whenever planning, creating, or modifying **ANY backend code**, you **MUST** follow the pre-flight workflow in Section 1, adhere strictly to the 5-layer architecture in Section 2, and verify builds and migrations in Section 9.
+> **Workflow Integration:** This skill is the specialized backend domain engine invoked by [**plan-executor**](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/plan-executor/SKILL.md). Whenever planning, creating, or modifying **ANY backend code**, you **MUST** follow the pre-flight workflow in Section 1, adhere strictly to the 5-layer architecture in Section 2, and verify builds and migrations in Section 9.
 
 ---
 
@@ -534,14 +534,37 @@ All backend responses must match these uniform envelopes:
 }
 ```
 
+### 7.4 Native Chunked Streaming Export Pattern (Zero-Memory Overhead)
+For large dataset exports (CSV/Excel) across fleet tables, always use the native Node.js `stream.Transform` chunked pipeline ([`backend/src/utils/streamingExport.ts`](file:///Users/soham18/Desktop/orbito-v2/backend/src/utils/streamingExport.ts)):
+- **Headers:** Set `Content-Type: text/csv; charset=utf-8`, `Transfer-Encoding: chunked`, `Content-Disposition: attachment; filename="<entity>_export_<timestamp>.csv"`.
+- **UTF-8 BOM:** Emits `\uFEFF` so Microsoft Excel automatically parses UTF-8 encoding.
+- **RFC 4180 Escaping:** Doubles internal quotes (`"` -> `""`) and quotes fields with commas or newlines.
+- **Backpressure & Client Disconnects:** Respects `res.write()` drain signals and registers cleanup on `res.on("close")`.
+
+```typescript
+// Service implementation pattern
+await streamCsvResponse(res, filename, columns, async (offset, limit) => {
+  return await Entity.findAll({ where, offset, limit, order: [["createdAt", "DESC"]] });
+});
+```
+
 ---
 
-## 8. Security Guardrails
+## 8. Security Guardrails & Authentication Architecture
 
 1. **Passwords:** Always hash with `bcrypt` using 10 rounds (`BCRYPT_ROUNDS = 10`). Never store or log plaintext passwords.
-2. **Environment Variables:** Never read, print, log, or edit `.env*` files. Always read config variables through [`backend/src/configs/environment.ts`](file:///Users/soham18/Desktop/orbito-v2/backend/src/configs/environment.ts).
-3. **No Secrets in Logs:** Use Winston logger ([`backend/src/configs/logger.ts`](file:///Users/soham18/Desktop/orbito-v2/backend/src/configs/logger.ts)). Never log JWT tokens, database connection strings, or user credentials.
-4. **Rate Limiting:** Protect login, authentication, and public endpoints with `express-rate-limit`.
+2. **Dual httpOnly Cookies:**
+   - `orbito_access_token`: Short-lived (15 minutes), `httpOnly: true`, `path: "/v1/api"`.
+   - `orbito_refresh_token`: Long-lived (7 days), `httpOnly: true`, `path: "/v1/api/auth"`.
+   - Set with `sameSite: "strict"` (production) or `"lax"` (development) and `secure: true` in production.
+   - Parsed with native zero-dependency `backend/src/middlewares/cookie.middleware.ts`.
+3. **Database Refresh Token Rotation & Theft Detection:**
+   - Table `refresh_tokens` (`010_refresh_tokens.ts`) persists SHA-256 hashed refresh tokens with `family_id` and `expires_at`.
+   - Rotating a token creates a new record and marks the previous token `revoked_at = NOW()`.
+   - If a revoked token is presented, all active tokens for that `family_id` are revoked immediately, killing stolen sessions.
+4. **Environment Variables:** Never read, print, log, or edit `.env*` files. Always read config variables through `backend/src/utils/env.util.ts`.
+5. **No Secrets in Logs:** Use Winston logger ([`backend/src/configs/logger.ts`](file:///Users/soham18/Desktop/orbito-v2/backend/src/configs/logger.ts)). Never log JWT tokens, database connection strings, or user credentials.
+6. **Rate Limiting:** Protect login, authentication, and public endpoints with `express-rate-limit`.
 
 ---
 

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ColDef } from "ag-grid-community";
 import {
   UserMinus,
   AlertTriangle,
@@ -13,6 +14,8 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/common/Button";
 import { Modal } from "@/components/common/Modal";
+import { Select } from "@/components/common/Select";
+import { AppDataTable } from "@/components/common/AppDataTable";
 import { showToast } from "@/lib/toast";
 import { appConfigApi, AppConfigItem } from "@/api/appConfig.api";
 
@@ -71,6 +74,64 @@ export const RemoveEntityPage: React.FC = () => {
       operatorName: "Fleet Admin"
     });
   };
+
+  const auditColumns = useMemo<ColDef<AppConfigItem>[]>(
+    () => [
+      {
+        headerName: "Asset Type",
+        field: "entityType",
+        minWidth: 130,
+        cellRenderer: (params: any) => (
+          <span className="font-semibold text-rose-600 dark:text-rose-400">
+            {params.value || "Asset"}
+          </span>
+        )
+      },
+      {
+        headerName: "Identifier",
+        field: "entityId",
+        minWidth: 150,
+        cellRenderer: (params: any) => (
+          <span className="font-mono font-semibold text-xs text-slate-800 dark:text-slate-200">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Asset Name",
+        field: "entityName",
+        minWidth: 150,
+        cellRenderer: (params: any) => params.value || "—"
+      },
+      {
+        headerName: "Reason",
+        field: "reason",
+        minWidth: 180,
+        cellRenderer: (params: any) => (
+          <span className="text-slate-600 dark:text-slate-400">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Decommissioned By",
+        field: "decommissionedBy",
+        minWidth: 160,
+        cellRenderer: (params: any) => params.value || "Fleet Admin"
+      },
+      {
+        headerName: "Timestamp",
+        field: "decommissionedAt",
+        minWidth: 170,
+        cellRenderer: (params: any) => (
+          <span className="text-slate-400 font-mono text-2xs">
+            {params.value ? new Date(params.value).toLocaleString() : "—"}
+          </span>
+        )
+      }
+    ],
+    []
+  );
 
   return (
     <div className="space-y-6">
@@ -159,17 +220,17 @@ export const RemoveEntityPage: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Decommission Reason *
               </label>
-              <select
+              <Select
+                sizeVariant="sm"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#1D293D] bg-white dark:bg-[#111C38] text-slate-900 dark:text-white focus-ring transition-colors"
               >
                 <option value="Asset Sold / Disposed">Asset Sold / Disposed</option>
                 <option value="Hardware Damaged / RMA">Hardware Damaged / RMA</option>
                 <option value="Lease Terminated">Lease Terminated</option>
                 <option value="Driver Resigned / Retired">Driver Resigned / Retired</option>
                 <option value="Contract Closed">Contract Closed</option>
-              </select>
+              </Select>
             </div>
 
             <div>
@@ -196,57 +257,25 @@ export const RemoveEntityPage: React.FC = () => {
       </div>
 
       {/* Historical Decommission Audit Log Table */}
-      <div className="panel-card overflow-hidden">
-        <div className="p-4 border-b border-slate-200 dark:border-[#1D293D] flex items-center justify-between">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <Clock className="w-4 h-4 text-slate-400" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Historical Decommission Audit Log
             </h3>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => refetch()} title="Refresh Audit Log">
+          <Button variant="outline" size="sm" onClick={() => refetch()} title="Refresh Audit Log">
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-[#0b1329] text-slate-500 border-b border-slate-200 dark:border-[#1D293D]">
-              <tr>
-                <th className="px-5 py-3">Asset Type</th>
-                <th className="px-5 py-3">Identifier</th>
-                <th className="px-5 py-3">Asset Name</th>
-                <th className="px-5 py-3">Reason</th>
-                <th className="px-5 py-3">Decommissioned By</th>
-                <th className="px-5 py-3">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1D293D]/60 text-slate-800 dark:text-slate-200">
-              {auditLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
-                    No entities have been decommissioned yet.
-                  </td>
-                </tr>
-              ) : (
-                auditLogs.map((log: AppConfigItem) => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-[#162244]/30">
-                    <td className="px-5 py-3 font-semibold text-rose-600 dark:text-rose-400">
-                      {log.entityType || "Asset"}
-                    </td>
-                    <td className="px-5 py-3 font-mono font-semibold">{log.entityId}</td>
-                    <td className="px-5 py-3">{log.entityName || "—"}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{log.reason}</td>
-                    <td className="px-5 py-3">{log.decommissionedBy || "Fleet Admin"}</td>
-                    <td className="px-5 py-3 text-slate-400 font-mono">
-                      {log.decommissionedAt ? new Date(log.decommissionedAt).toLocaleString() : "—"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AppDataTable<AppConfigItem>
+          rowData={auditLogs}
+          columnDefs={auditColumns}
+          isLoading={isLoading}
+          total={auditLogs.length}
+        />
       </div>
 
       {/* Confirmation Modal */}

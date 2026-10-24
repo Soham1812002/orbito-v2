@@ -1,4 +1,5 @@
 import apiClient from "@/utils/api";
+import { downloadStreamFile } from "@/utils/streamingExport";
 import {
   GeofenceItem,
   GeofenceSummaryAItem,
@@ -197,6 +198,11 @@ export const geofenceApi = {
       inMemoryDeviations[index].acknowledged = true;
       return inMemoryDeviations[index];
     }
+  },
+
+  // 10. Streaming Export
+  exportGeofences: async (params?: Record<string, any>): Promise<void> => {
+    await downloadStreamFile("/geofence/export", "geofences_export.csv", params);
   }
 };
 

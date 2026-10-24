@@ -1,4 +1,5 @@
 import apiClient from "@/utils/api";
+import { downloadStreamFile } from "@/utils/streamingExport";
 import {
   PoiItem,
   PoiSummaryAItem,
@@ -209,6 +210,11 @@ export const poiApi = {
       }
       return data;
     }
+  },
+
+  // 10. Streaming Export
+  exportPois: async (params?: Record<string, any>): Promise<void> => {
+    await downloadStreamFile("/poi/export", "poi_export.csv", params);
   }
 };
 

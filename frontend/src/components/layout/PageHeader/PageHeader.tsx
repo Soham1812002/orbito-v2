@@ -109,9 +109,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               {title}
             </h1>
-            {badge !== undefined && (
-              <span className={getBadgeClass()}>{badge}</span>
-            )}
           </div>
 
           {description && (

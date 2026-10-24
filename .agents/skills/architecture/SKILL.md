@@ -21,19 +21,21 @@ This skill explains how Orbito v2 is organized, how frontend and backend communi
   • TanStack React Query: All API data & caching
   • React Context: Dark theme & sidebar toggles
   • AG Grid Data Tables & React Hook Form
+  • Axios Interceptor: Silent refresh queue & auto-logout
        │
-       ▼ (Bearer JWT HTTP Requests)
+       ▼ (Credentials: true, Dual httpOnly Cookies: orbito_access_token & orbito_refresh_token)
 [ Node.js + Express 5 Backend API ]
-  • Routes: URL matching
-  • Middlewares: Auth check -> Permission check -> Input DTO validation
-  • Controllers: Thin coordinator (parse input -> call service -> send JSON)
-  • Services: Business logic & database transactions
-  • Models: Sequelize database tables & relationships
+  • Routes: URL matching (/v1/api/auth/login, /refresh, /logout, /me)
+  • Middlewares: Cookie Parser -> Auth check -> Permission check -> Input DTO validation
+  • Controllers: Thin coordinator (cookies, parse input -> call service -> send JSON)
+  • Services: Token generation, rotation, family theft detection & database transactions
+  • Models: Sequelize database tables & relationships (refresh_tokens)
        │
        ▼ (SQL Queries via connection pool)
 [ PostgreSQL 16 Database ]
   • UUID primary keys
   • Snake_case columns & soft deletes (deleted_at)
+  • Refresh token persistence with family rotation & revocation tracking
   • Migration check on boot
 ```
 
@@ -103,6 +105,8 @@ frontend/src/
     ├── auth/        # SignInPage, ForgotPasswordPage, LinkConfirmationPage
     ├── dashboard/   # DashboardPage
     ├── users/       # EntityList, EntityForm, Entity.columns
+    ├── licensing/   # LicensingHubPage, Company/User/Vehicle/Reseller License pages
+    ├── maintenance/ # MaintenanceHubPage, Reminders (status/overview/form), Expenses (history/overview/form)
     ├── reports/     # ReportsLayout, ReportsNavigatorPage, views/
     ├── system-config/# SystemConfigLayout, Hub, Entity pages, AuditLogPage
     └── app-config/  # AppConfigLayout, Hub, Entity pages, MasterDataXlsPage
@@ -205,6 +209,62 @@ GET /v1/api/<entities>?page=1&limit=10&search=john&filter[isActive]=true&sortBy=
 
 ---
 
-## 7. How and When to Update This Skill
+## 7. Alerts Management & Live Telematics Architecture (Figma Node 3024:204)
 
-> **Instruction:** When you add a new model, route, service, or frontend feature module, update this file so the architectural blueprint stays accurate.
+- **Backend 5-Layer Alert Stack:**
+  - **Tables & Models:** `alert_rules` and `alert_logs` tables with UUID primary keys, JSONB parameters/channels/schedule columns, and soft deletion (`deleted_at`).
+  - **RBAC Permissions:** `VIEW:ALERT` (incidents log, rule lists, live feed) and `MANAGE:ALERT` (create, edit, delete rules, acknowledge incidents).
+  - **Transaction Boundary:** Incident acknowledgement and rule mutation execute within atomic `sequelize.transaction()` with structured audit logging.
+- **Frontend Spatial Canvas & Contextual Drawers Pattern:**
+  - **Fleet Telematics Live Dashboard (`/dashboard`):** Real-time asset monitoring map featuring 5 top status filter chips (`TOTAL`, `RUNNING`, `IDLE`, `STOP`, `INACTIVE`) and an in-map asset dock (`LiveVehicleSwitcher`).
+  - **In-Map Slide-Over Drawers:**
+    - `RecentAlertsDrawer`: In-map real-time exception feed with instant map locate and acknowledge actions.
+    - `VehicleRemindersDrawer`: Contextual upcoming maintenance schedules and odometer tracking for selected assets.
+    - `QuickReportsDrawer`: Immediate single-asset performance summary without navigating away from the live map.
+  - **Alerts 8-File Feature Module (`/alerts`):**
+    - `AlertIncidentListPage`: Full-fleet incident log with severity filtering, map navigation, and CSV export.
+    - `AlertRulesListPage`: Active rule register with status toggling and management actions.
+    - `AlertRuleFormPage`: 4-panel policy configuration form with schedule days and notification channel cards.
+
+---
+
+---
+
+## 8. Advance Operations & Dispatch Architecture (Figma Canvas Node 676:2655)
+
+- **Backend 5-Layer Dispatch Stack:**
+  - **Tables & Models (`006_advance_operations_phase1.ts`):**
+    - `route_paths`: Master transit corridors with geo coordinates, corridor buffer radius, road speed caps, and JSONB `waypoints`.
+    - `route_path_allocations`: Vehicle-to-corridor binding with schedule types (daily_24_7, custom_days), departure windows, and deviation tolerances.
+    - `crew_allocations`: Multi-driver pairing, attendant/cleaner assignments, shift designations, and roster date ranges.
+    - `immobilizer_audits`: Electronic starter interrupt, fuel valve relay cuts, and restoration logs with diagnostic speed, battery voltage, and mandatory operator justifications.
+    - `compliance_reminders`: Statutory compliance tracker for commercial insurance, fitness certificates, PUC, permits, and driver licenses with multi-channel alerts (SMS, email, web push).
+  - **RBAC Permissions:** `VIEW:DISPATCH`, `MANAGE:DISPATCH`, `VIEW:COMPLIANCE`, `MANAGE:COMPLIANCE` (all covered by `OPERATE:ALL` SuperAdmin bypass).
+  - **Atomic Transaction & Audit Standard:** All dispatch assignments, relay dispatches, and compliance edits execute within `sequelize.transaction()` with structured `AuditLog` records.
+- **Frontend 8-File Feature Modules (`frontend/src/pages/operations/`):**
+  - `routes/`: Route Corridors directory with 4 KPI metrics, search filtering, and 4-panel `RoutePathFormPage` (Identity, Caps, Coordinates, Waypoint Sequence Editor).
+  - `allocations/`: Vehicle corridor allocation directory with schedule pills, departure times, and full-page `RouteAllocationFormPage`.
+  - `crew/`: Driver-cleaner roster directory with pairing badges, duty chips, phone telematics, and `CrewAllocationFormPage`.
+  - `immobilizer/`: Security audit log table with relay execution badges, live voltage diagnostics, and interactive `Dispatch Remote Relay Command` modal with safety certification.
+  - `compliance/`: General reminders directory with document expiration countdowns, urgency badges, channel pills, and `ComplianceReminderFormPage`.
+- **Navigation Integration:** Mounted under `Operations` accordion group in `navigation.config.ts` and registered in `frontend/src/routes/index.tsx`.
+
+---
+
+## 9. Engineering Workflow & Curated Skill Synchronization
+
+### The Unified Implementation Workflow
+Orbito v2 engineering follows a strict 6-step lifecycle orchestrated by specialized skills:
+1. **Understand & Inspect:** Inspect codebase models, routes, or Figma URLs (`ui-ux-pro-max`).
+2. **Grill Me (`grill-me`):** Relentless interactive interview via `ask_question` modal to resolve decision branches before planning.
+3. **Plan & Review (`overengineering-review`):** Formulate plan and purge speculative abstractions, YAGNI, or unnecessary dependencies.
+4. **Execute Loop (`plan-executor`):**
+   - Routes **Backend** tasks to [**backend-pattern-executor**](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/backend-pattern-executor/SKILL.md) (5 layers, zero-drift migrations, DTO validation, transactions).
+   - Routes **Frontend / UI** tasks to [**ui-layout-executor**](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/ui-layout-executor/SKILL.md) (tokens, 8-file pattern, `<TableFilterBar>`, `<AppDataTable>`, `<TwoLineCell>`, card padding).
+   - Verifies compile checks (`npm run build`, `npm run migrate:check`) and goals after every single step until 100% completed.
+5. **Verify (`playwright-qa`):** Multi-viewport browser journeys, console audits, and screenshot evidence.
+6. **Curated Skill Updates:** Update necessary skills upon major changes.
+
+### Curated Skill Synchronization Standard
+- **When to update skills:** Proactively update matching `.agents/skills/` documents and `AGENTS.md` whenever introducing or modifying durable architectural conventions, new database tables/models, shared UI components (`@/components/common`), or module patterns.
+- **What NOT to update:** Do NOT treat skills as git commit changelogs or task logs. Never add one-off bug fix summaries or temporary debugging instructions. ONLY record durable, repeatable standards that prevent future engineering inconsistency.

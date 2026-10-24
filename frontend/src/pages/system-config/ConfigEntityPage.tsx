@@ -14,6 +14,9 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/common/Button";
 import { Modal } from "@/components/common/Modal";
+import { AppDataTable, StatusBadgeCell } from "@/components/common/AppDataTable";
+import { TableFilterBar } from "@/components/common/TableFilterBar";
+import type { ColDef } from "ag-grid-community";
 import { showToast } from "@/lib/toast";
 import { systemConfigApi, SystemConfigItem } from "@/api/systemConfig.api";
 
@@ -272,6 +275,71 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+  const gridColumns = useMemo<ColDef<SystemConfigItem>[]>(() => {
+    const cols: ColDef<SystemConfigItem>[] = config.columns.map((c) => ({
+      headerName: c.label,
+      field: c.key as any,
+      minWidth: 140,
+      flex: 1,
+      cellRenderer: (params: any) => {
+        if (!params.data) return null;
+        if (c.render) {
+          return c.render(params.value, params.data);
+        }
+        return (
+          <span className="text-xs text-slate-700 dark:text-slate-300">
+            {String(params.value ?? "-")}
+          </span>
+        );
+      }
+    }));
+
+    cols.push({
+      headerName: "Actions",
+      field: "id" as any,
+      minWidth: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params: any) => {
+        const item = params.data;
+        if (!item) return null;
+        return (
+          <div className="flex items-center justify-end gap-1 py-1">
+            <button
+              type="button"
+              onClick={() => handleOpenCopy(item)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-[#1D293D] transition-colors"
+              title="Duplicate record"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenEdit(item)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-[#1D293D] transition-colors"
+              title="Edit record"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setItemToDelete(item);
+                setDeleteModalOpen(true);
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-[#1D293D] transition-colors"
+              title="Delete record"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
+      }
+    });
+
+    return cols;
+  }, [config.columns]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -281,32 +349,7 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
           { label: config.title }
         ]}
         title={config.title}
-        badge={config.badge}
-        badgeVariant="cyan"
         description={config.description}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              leftIcon={<RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />}
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              Refresh
-            </Button>
-            <Button variant="secondary" leftIcon={<Download className="h-4 w-4" />} onClick={handleExport}>
-              Export
-            </Button>
-            <Button
-              variant="primary"
-              data-testid="add-entity-btn"
-              leftIcon={<Plus className="h-4 w-4" />}
-              onClick={handleOpenCreate}
-            >
-              Add {config.singularTitle}
-            </Button>
-          </div>
-        }
       />
 
       {/* Metric Counters Strip */}
@@ -333,116 +376,30 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
         </div>
       </div>
 
-      {/* Search & Filter Toolbar */}
-      <div className="panel-card p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              data-testid="config-table-search"
-              aria-label={`Search ${config.title.toLowerCase()}`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`Search ${config.title.toLowerCase()}...`}
-              className="w-full rounded-xl bg-slate-50 dark:bg-[#162032] border border-slate-200 dark:border-[#1D293D] pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-            />
-          </div>
+      {/* Unified TableFilterBar matching POI Standards */}
+      <TableFilterBar
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder={`Search ${config.title.toLowerCase()}...`}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        statusOptions={["ALL", "ACTIVE", "INACTIVE"]}
+        onRefresh={() => refetch()}
+        isRefreshing={isFetching}
+        onExport={handleExport}
+        exportLabel="Export"
+        onCreateNew={handleOpenCreate}
+        createLabel={`Add ${config.singularTitle}`}
+      />
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            {["ALL", "ACTIVE", "INACTIVE"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  statusFilter === status
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 dark:bg-[#162032] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Data Table */}
-      <div className="panel-card overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-slate-400">
-            <Loader2 className="h-6 w-6 animate-spin mr-2 text-blue-500" />
-            <span className="text-xs font-medium">Loading configuration records...</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-[#162032] border-b border-slate-200 dark:border-[#1D293D] text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-                <tr>
-                  {config.columns.map((c) => (
-                    <th key={c.key} className="px-4 py-3">
-                      {c.label}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-[#1D293D]">
-                {filteredItems.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={config.columns.length + 1}
-                      className="px-4 py-12 text-center text-slate-400"
-                    >
-                      No matching records found in database.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredItems.map((item, idx) => (
-                    <tr
-                      key={item.id || item._id || idx}
-                      className="hover:bg-slate-50/50 dark:hover:bg-[#162032]/40 transition-colors"
-                    >
-                      {config.columns.map((c) => (
-                        <td key={c.key} className="px-4 py-3.5 whitespace-nowrap">
-                          {c.render ? c.render(item[c.key], item) : String(item[c.key] ?? "-")}
-                        </td>
-                      ))}
-                      <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleOpenCopy(item)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-[#1D293D] transition-colors"
-                            title="Duplicate record"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-[#1D293D] transition-colors"
-                            title="Edit record"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setItemToDelete(item);
-                              setDeleteModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-[#1D293D] transition-colors"
-                            title="Delete record"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Main Data Table with Standard Panel-Card Padding */}
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
+        <AppDataTable<SystemConfigItem>
+          rowData={filteredItems}
+          columnDefs={gridColumns}
+          isLoading={isLoading}
+          total={filteredItems.length}
+        />
       </div>
 
       {/* Create / Edit / Copy Modal */}

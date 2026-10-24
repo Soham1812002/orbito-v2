@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { UserPlus, Filter } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { AppDataTable } from "@/components/common/AppDataTable";
+import { TableFilterBar } from "@/components/common/TableFilterBar";
 import { Button } from "@/components/common/Button";
 import { Modal } from "@/components/common/Modal";
 import { getUserColumns } from "./Entity.columns";
@@ -9,7 +10,6 @@ import { useUserList, useDeleteUser } from "@/queries/users.queries";
 import { User } from "@/types/users.types";
 import { useAppSelector } from "@/redux/hooks";
 import { hasPermission } from "@/utils/permissions";
-
 import { PageHeader } from "@/components/layout/PageHeader";
 
 export const EntityList: React.FC = () => {
@@ -97,46 +97,42 @@ export const EntityList: React.FC = () => {
           { label: "User Management" }
         ]}
         title="User Overview"
-        badge={data?.total ? `${data.total} USERS` : undefined}
         description="Review user accounts, application access, and recent sign-in activity across your fleet organization."
-        actions={
-          canCreate ? (
-            <Button
-              onClick={() => {
+      />
+
+      {/* Standard TableFilterBar */}
+      <TableFilterBar
+        search={searchTerm}
+        onSearchChange={(term) => {
+          setSearchTerm(term);
+          setPage(1);
+        }}
+        searchPlaceholder="Search users by name or email..."
+        statusFilter={statusFilter}
+        onStatusFilterChange={(st) => {
+          setStatusFilter(st);
+          setPage(1);
+        }}
+        statusOptions={[
+          { label: "All Accounts", value: "all" },
+          { label: "Active Only", value: "active" },
+          { label: "Inactive Only", value: "inactive" }
+        ]}
+        onRefresh={() => refetch()}
+        onCreateNew={
+          canCreate
+            ? () => {
                 setSelectedUser(null);
                 setFormMode("create");
                 setFormOpen(true);
-              }}
-              leftIcon={<UserPlus className="h-4 w-4" />}
-            >
-              Add New User
-            </Button>
-          ) : undefined
+              }
+            : undefined
         }
+        createLabel="Add New User"
       />
 
-      {/* Filter Bar */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 shadow-sm">
-          <Filter className="h-3.5 w-3.5 text-slate-400" />
-          <span>Status:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Accounts</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-          </select>
-        </div>
-      </div>
-
       {/* Data Table */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-4 shadow-sm backdrop-blur-sm">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable<User>
           rowData={data?.rows || []}
           columnDefs={columns}
@@ -150,12 +146,6 @@ export const EntityList: React.FC = () => {
             setPageSize(newSize);
             setPage(1);
           }}
-          searchTerm={searchTerm}
-          onSearchChange={(term) => {
-            setSearchTerm(term);
-            setPage(1);
-          }}
-          onRefresh={() => refetch()}
         />
       </div>
 

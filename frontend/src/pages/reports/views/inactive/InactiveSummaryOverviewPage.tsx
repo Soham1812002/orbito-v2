@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import type { ColDef } from "ag-grid-community";
 import { Radio, ArrowUpRight } from "lucide-react";
 import { ReportBreadcrumbs } from "@/pages/reports/components/ReportBreadcrumbs";
 import { ReportKpiCards } from "@/pages/reports/components/ReportKpiCards";
 import { ReportFilterBar } from "@/pages/reports/components/ReportFilterBar";
 import { ReportExportToolbar } from "@/pages/reports/components/ReportExportToolbar";
+import { AppDataTable } from "@/components/common/AppDataTable";
 import { reportsApi } from "@/api/reports.api";
 import { InactiveOverviewRow, ReportKpiMetric, ReportFilterState } from "@/types/reports.types";
 
@@ -31,6 +33,97 @@ export const InactiveSummaryOverviewPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [filters.search, filters.dateRange, filters.vehicle]);
+
+  const columns = useMemo<ColDef<InactiveOverviewRow>[]>(
+    () => [
+      {
+        headerName: "Vehicle Details",
+        field: "vehicleNo",
+        minWidth: 170,
+        cellRenderer: (params: any) => (
+          <div>
+            <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
+              {params.value}
+            </div>
+            <div className="text-[11px] text-slate-400">{params.data?.driverName}</div>
+          </div>
+        )
+      },
+      {
+        headerName: "Branch",
+        field: "branch",
+        minWidth: 140,
+        cellRenderer: (params: any) => (
+          <span className="text-slate-700 dark:text-slate-300 font-medium">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Inactive Since",
+        field: "inactiveSince",
+        minWidth: 160,
+        cellRenderer: (params: any) => (
+          <span className="font-mono text-2xs text-slate-600 dark:text-slate-300">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Last Reported Location",
+        field: "lastLocation",
+        minWidth: 220,
+        cellRenderer: (params: any) => (
+          <span className="text-slate-600 dark:text-slate-300 truncate" title={params.value}>
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Inactive Duration",
+        field: "inactiveDuration",
+        minWidth: 140,
+        cellRenderer: (params: any) => (
+          <span className="font-mono font-bold text-2xs text-rose-600 dark:text-rose-400">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "GPS Status",
+        field: "gpsStatus",
+        minWidth: 130,
+        cellRenderer: (params: any) => (
+          <span
+            className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
+              params.value === "OVER 24 HR"
+                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
+                : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+            }`}
+          >
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Actions",
+        field: "vehicleNo",
+        minWidth: 130,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: any) => (
+          <Link
+            to={`/reports/inactive-summary/${encodeURIComponent(params.value)}`}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white font-semibold text-2xs transition-colors"
+          >
+            <span>Events ({params.data?.eventCount || 0})</span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        )
+      }
+    ],
+    []
+  );
 
   return (
     <div className="space-y-6">
@@ -62,75 +155,14 @@ export const InactiveSummaryOverviewPage: React.FC = () => {
         dataToExport={rows}
       />
 
-      <div className="panel-card !p-0 overflow-hidden border border-slate-200/80 dark:border-[#1D293D]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-[#121B2E] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4">Vehicle Details</th>
-                <th className="py-3.5 px-4">Branch</th>
-                <th className="py-3.5 px-4">Inactive Since</th>
-                <th className="py-3.5 px-4">Last Reported Location</th>
-                <th className="py-3.5 px-4 text-center">Inactive Duration</th>
-                <th className="py-3.5 px-4 text-center">GPS Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-              {rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                >
-                  <td className="py-3.5 px-4">
-                    <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-                      {row.vehicleNo}
-                    </div>
-                    <div className="text-[11px] text-slate-400">{row.driverName}</div>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
-                    {row.branch}
-                  </td>
-
-                  <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-300">
-                    {row.inactiveSince}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 truncate max-w-xs">
-                    {row.lastLocation}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-center font-mono font-bold text-rose-600 dark:text-rose-400">
-                    {row.inactiveDuration}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-center">
-                    <span
-                      className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
-                        row.gpsStatus === "OVER 24 HR"
-                          ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
-                          : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
-                      }`}
-                    >
-                      {row.gpsStatus}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-right">
-                    <Link
-                      to={`/reports/inactive-summary/${encodeURIComponent(row.vehicleNo)}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white font-semibold text-xs transition-colors"
-                    >
-                      <span>Events ({row.eventCount})</span>
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Responsive Data Table using AppDataTable */}
+      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+        <AppDataTable<InactiveOverviewRow>
+          rowData={rows}
+          columnDefs={columns}
+          isLoading={isLoading}
+          total={rows.length}
+        />
       </div>
     </div>
   );

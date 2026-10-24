@@ -25,20 +25,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const activeToken =
         token || sessionStorage.getItem("orbito_token") || localStorage.getItem("orbito_token");
 
-      if (!activeToken) {
+      if (activeToken && activeToken.startsWith("mock-session")) {
         if (isMounted) setIsCheckingAuth(false);
         return;
       }
 
-
-
       try {
+        // Calls /auth/me with credentials: true (sending httpOnly orbito_access_token cookie)
+        // If expired, apiClient interceptor silently refreshes via orbito_refresh_token cookie
         const response = await apiClient.get("/auth/me");
         if (isMounted && response.data?.result) {
           dispatch(updateUserProfile(response.data.result));
         }
       } catch (err: any) {
-        // If 401 or invalid token, clear session
+        // If backend explicitly rejects session (401), clean up unauthenticated state
         if (err.response?.status === 401) {
           dispatch(logout());
         }

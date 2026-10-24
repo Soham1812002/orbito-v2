@@ -173,8 +173,6 @@ export const GeofenceSummaryAPage: React.FC = () => {
           { label: "Zone Activity Summary" }
         ]}
         title="Geofence Zone Activity Performance"
-        badge="ZONE SURVEILLANCE"
-        badgeVariant="cyan"
         description="Analyze aggregate entry/exit volumes and accumulated in-zone dwell time across configured perimeters."
       />
 
@@ -189,7 +187,7 @@ export const GeofenceSummaryAPage: React.FC = () => {
         placeholder="Filter by geofence name or branch..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

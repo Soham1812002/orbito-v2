@@ -7,6 +7,7 @@ import { AppDataTable } from "@/components/common/AppDataTable";
 import { PoiFilterBar } from "./components/PoiFilterBar";
 import { usePoiList, useDeletePoi } from "@/queries/poi.queries";
 import { PoiItem } from "@/types/poi.types";
+import { poiApi } from "@/api/poi.api";
 import { showToast } from "@/lib/toast";
 
 export const PoiOverviewPage: React.FC = () => {
@@ -38,37 +39,14 @@ export const PoiOverviewPage: React.FC = () => {
     }
   };
 
-  const handleExportExcel = () => {
-    if (!data?.items || data.items.length === 0) {
-      showToast.error("No data available to export");
-      return;
-    }
-
+  const handleExportExcel = async () => {
     try {
-      const headers = ["Company", "Branch", "Place Name", "Geo Code", "Category", "Street", "City", "State", "Latitude", "Longitude", "Status"];
-      const rows = data.items.map((item) => [
-        `"${item.company}"`,
-        `"${item.branch}"`,
-        `"${item.name}"`,
-        `"${item.geoCode}"`,
-        `"${item.category}"`,
-        `"${item.street}"`,
-        `"${item.city}"`,
-        `"${item.state}"`,
-        item.latitude,
-        item.longitude,
-        item.isActive ? "Active" : "Inactive"
-      ]);
-
-      const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `poi_directory_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await poiApi.exportPois({
+        search: searchTerm || undefined,
+        company: selectedCompany !== "ALL" ? selectedCompany : undefined,
+        branch: selectedBranch !== "ALL" ? selectedBranch : undefined,
+        category: selectedCategory !== "ALL" ? selectedCategory : undefined
+      });
       showToast.success("POI Directory exported to Excel CSV!");
     } catch {
       showToast.error("Failed to export data");
@@ -209,8 +187,6 @@ export const PoiOverviewPage: React.FC = () => {
           { label: "POI Overview" }
         ]}
         title="Points of Interest Directory"
-        badge={`${data?.total || 0} CONFIGURED`}
-        badgeVariant="cyan"
         description="Company, branch, location, and address information is organized for an operational Excel-ready overview."
       />
 
@@ -231,7 +207,7 @@ export const PoiOverviewPage: React.FC = () => {
       />
 
       {/* Main Data Table */}
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data?.items || []}
           columnDefs={columnDefs}

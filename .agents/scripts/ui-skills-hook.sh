@@ -1,13 +1,13 @@
 #!/bin/bash
 # Antigravity PreInvocation hook
-# Enforces UI UX Pro Max pre-flight analysis, ui-layout-executor compliance,
-# and post-implementation skill updates to avoid recurring mistakes.
+# Enforces plan-executor orchestration, backend-pattern-executor,
+# ui-layout-executor compliance, and curated skill updates on major changes.
 
 cat << 'EOF'
 {
   "injectSteps": [
     {
-      "ephemeralMessage": "🚨 [UI & Implementation Standards Active]\n1. UI Planning & Design Analysis: If design URLs (Figma) are provided, inspect them via Figma MCP tools (get_figma_data). Run the globally installed ui-ux-pro-max skill to extract design system tokens, typography, UX patterns, and stack guidelines.\n2. UI Implementation Standards: Always adhere to .agents/skills/ui-layout-executor/SKILL.md (use index.css tokens, common classes like .panel-card, .focus-ring, .touch-target, .nav-item-*, .badge-*, AppIcon, PageHeader, and full mobile/tablet responsiveness).\n3. Curated Skill Updates: Do NOT add one-off bug fixes, task logs, or trivial tweaks to skills. Skills are NOT changelogs. ONLY record durable architectural conventions, reusable standards, and guidelines that must be followed whenever doing such or related tasks in the future."
+      "ephemeralMessage": "🚨 [Orbito v2 Architecture & Implementation Standards Active]\n1. Plan Executor Orchestration: Execute all plans via .agents/skills/plan-executor/SKILL.md. Route backend work to backend-pattern-executor and frontend work to ui-layout-executor. Verify after each atomic step (npm run build, migrate:check) and loop continuously until 100% of the plan and goal are achieved.\n2. Backend Standards: Strictly enforce the 5 layers (routes -> middlewares -> controllers -> services -> models), atomic transactions (sequelize.transaction()), Zod DTO validation, and zero-drift migrations (npm run migrate:check).\n3. Frontend & UI Standards: Adhere strictly to .agents/skills/ui-layout-executor/SKILL.md (strict 2-font rule: Inter & font-mono, .panel-card p-4 sm:p-5 overflow-hidden, <TableFilterBar>, <AppDataTable>, <TwoLineCell>, clean PageHeader with no title badges, 8-file module pattern).\n4. Curated Skill Updates on Major Changes: Proactively update the necessary skills in .agents/skills/ and AGENTS.md whenever major changes, architectural shifts, or reusable common patterns are implemented to prevent future inconsistency. Do NOT update everything (never add changelogs, task logs, or trivial bug fixes); ONLY record durable, repeatable standards."
     }
   ]
 }

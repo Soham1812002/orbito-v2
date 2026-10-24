@@ -39,7 +39,9 @@ import {
   Mail,
   FileCode2,
   Activity,
-  CalendarDays
+  CalendarDays,
+  Network,
+  PowerOff
 } from "lucide-react";
 import { IconComponentType } from "@/components/common/icons/AppIcon";
 
@@ -58,7 +60,10 @@ export type NavigationGroup =
   | "Operations & Tracking"
   | "Communications & Logs"
   | "Automation & Catalog"
-  | "Spatial Telematics";
+  | "Spatial Telematics"
+  | "Entitlements & Quotas"
+  | "Fleet Maintenance"
+  | "Operating Expenses";
 
 export interface NavSubItemConfig {
   key: string;
@@ -105,7 +110,30 @@ export const navigationSections: NavSectionConfig[] = [
         name: "Vehicles",
         path: "/vehicles",
         icon: Car,
-        permission: "VIEW:VEHICLE"
+        permission: "VIEW:VEHICLE",
+        children: [
+          {
+            key: "vehicles-directory",
+            name: "Vehicle Directory",
+            path: "/vehicles",
+            icon: Car,
+            group: "Vehicle Assets"
+          },
+          {
+            key: "live-tracking",
+            name: "Live Tracking",
+            path: "/live-tracking",
+            icon: Navigation,
+            group: "Operations & Tracking"
+          },
+          {
+            key: "playback",
+            name: "Route Playback",
+            path: "/playback",
+            icon: Clock,
+            group: "Activity & Motion"
+          }
+        ]
       },
       {
         key: "reports",
@@ -114,13 +142,6 @@ export const navigationSections: NavSectionConfig[] = [
         icon: FileText,
         permission: "VIEW:REPORT",
         children: [
-          {
-            key: "reports-navigator",
-            name: "Reports Hub",
-            path: "/reports",
-            group: "Automation & Catalog",
-            icon: Grid
-          },
           {
             key: "travel-summary",
             name: "Travel Summary",
@@ -294,13 +315,6 @@ export const navigationSections: NavSectionConfig[] = [
         permission: "VIEW:GEOFENCE",
         children: [
           {
-            key: "geofence-hub",
-            name: "Geofence Hub",
-            path: "/geofence",
-            icon: Compass,
-            group: "Spatial Telematics"
-          },
-          {
             key: "geofence-overview",
             name: "Geofence Directory",
             path: "/geofence/overview",
@@ -343,7 +357,30 @@ export const navigationSections: NavSectionConfig[] = [
         path: "/alerts",
         icon: Bell,
         badge: 3,
-        badgeType: "alert"
+        badgeType: "alert",
+        children: [
+          {
+            key: "alert-incidents",
+            name: "Incidents Log",
+            path: "/alerts",
+            icon: BellRing,
+            group: "Rules & Governance"
+          },
+          {
+            key: "alert-rules",
+            name: "Configured Rules",
+            path: "/alerts/rules",
+            icon: SlidersHorizontal,
+            group: "Rules & Governance"
+          },
+          {
+            key: "new-alert-rule",
+            name: "New Alert Rule",
+            path: "/alerts/new",
+            icon: Sparkles,
+            group: "Rules & Governance"
+          }
+        ]
       }
     ]
   },
@@ -355,13 +392,118 @@ export const navigationSections: NavSectionConfig[] = [
         key: "licensing",
         name: "Licensing",
         path: "/licensing",
-        icon: CreditCard
+        icon: CreditCard,
+        children: [
+          {
+            key: "company-licenses",
+            name: "Company Licenses",
+            path: "/licensing/companies",
+            icon: Building2,
+            group: "Entitlements & Quotas"
+          },
+          {
+            key: "user-licenses",
+            name: "User Licenses",
+            path: "/licensing/users",
+            icon: Users,
+            group: "Entitlements & Quotas"
+          },
+          {
+            key: "vehicle-licenses",
+            name: "Vehicle Licenses",
+            path: "/licensing/vehicles",
+            icon: Truck,
+            group: "Entitlements & Quotas"
+          },
+          {
+            key: "reseller-licenses",
+            name: "Reseller Licenses",
+            path: "/licensing/resellers",
+            icon: Network,
+            group: "Entitlements & Quotas"
+          }
+        ]
       },
       {
         key: "maintenance",
         name: "Maintenance",
         path: "/maintenance",
-        icon: Wrench
+        icon: Wrench,
+        children: [
+          {
+            key: "reminder-status",
+            name: "Reminder Status",
+            path: "/maintenance/reminders/status",
+            icon: Bell,
+            group: "Fleet Maintenance",
+            badge: 24,
+            badgeType: "counter"
+          },
+          {
+            key: "reminder-overview",
+            name: "Reminder Overview",
+            path: "/maintenance/reminders/overview",
+            icon: CalendarDays,
+            group: "Fleet Maintenance"
+          },
+          {
+            key: "expense-history",
+            name: "Expense History",
+            path: "/maintenance/expenses/history",
+            icon: FileSpreadsheet,
+            group: "Operating Expenses"
+          },
+          {
+            key: "expense-overview",
+            name: "Expense Overview",
+            path: "/maintenance/expenses/overview",
+            icon: ClipboardList,
+            group: "Operating Expenses"
+          }
+        ]
+      },
+      {
+        key: "dispatch-operations",
+        name: "Advance Operations",
+        path: "/operations",
+        icon: Navigation,
+        children: [
+          {
+            key: "route-paths",
+            name: "Route Corridors",
+            path: "/operations/routes",
+            icon: Compass,
+            group: "Operations & Governance"
+          },
+          {
+            key: "route-allocations",
+            name: "Corridor Allocations",
+            path: "/operations/allocations",
+            icon: Layers,
+            group: "Operations & Governance"
+          },
+          {
+            key: "crew-allocations",
+            name: "Crew Allocation",
+            path: "/operations/crew",
+            icon: Users,
+            group: "Operations & Governance"
+          },
+          {
+            key: "immobilizer-audit",
+            name: "Immobilizer Log",
+            path: "/operations/immobilizer",
+            icon: PowerOff,
+            group: "Operations & Governance"
+          },
+          {
+            key: "compliance-reminders",
+            name: "General Reminders",
+            path: "/operations/compliance",
+            icon: FileText,
+            group: "Operations & Governance"
+          }
+        ]
       }
     ]
   },
@@ -375,36 +517,7 @@ export const navigationSections: NavSectionConfig[] = [
         path: "/system-config",
         icon: Sliders,
         children: [
-          // 1. Identity & Access
-          {
-            key: "users",
-            name: "User Overview",
-            path: "/system-config/users",
-            group: "Identity & Access",
-            icon: Users
-          },
-          {
-            key: "user-groups",
-            name: "User Groups",
-            path: "/system-config/user-groups",
-            group: "Identity & Access",
-            icon: Users
-          },
-          {
-            key: "roles",
-            name: "Roles",
-            path: "/system-config/roles",
-            group: "Identity & Access",
-            icon: ShieldCheck
-          },
-          {
-            key: "user-profiles",
-            name: "User Profiles",
-            path: "/system-config/user-profiles",
-            group: "Identity & Access",
-            icon: UserCheck
-          },
-          // 2. Reseller & Billing
+          // 1. Reseller & Billing
           {
             key: "resellers",
             name: "Resellers",
@@ -612,7 +725,25 @@ export const navigationSections: NavSectionConfig[] = [
         name: "User Rights",
         path: "/users",
         icon: Users,
-        permission: "VIEW:USER"
+        permission: "VIEW:USER",
+        children: [
+          {
+            key: "users-directory",
+            name: "Users Directory",
+            path: "/users/list",
+            group: "Identity & Access",
+            icon: Users,
+            permission: "VIEW:USER"
+          },
+          {
+            key: "user-groups",
+            name: "User Groups & RBAC",
+            path: "/users/groups",
+            group: "Identity & Access",
+            icon: ShieldCheck,
+            permission: "VIEW:USER"
+          }
+        ]
       }
     ]
   }

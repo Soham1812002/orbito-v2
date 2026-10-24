@@ -145,8 +145,6 @@ export const MissedPoiPage: React.FC = () => {
           { label: "Missed POI" }
         ]}
         title="Missed Point of Interest Summary"
-        badge="COMPLIANCE AUDIT"
-        badgeVariant="alert"
         description="Review vehicle visits and missed point activity across configured points of interest."
       />
 
@@ -163,7 +161,7 @@ export const MissedPoiPage: React.FC = () => {
         placeholder="Filter by vehicle registration or model..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

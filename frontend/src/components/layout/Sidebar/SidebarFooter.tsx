@@ -54,8 +54,8 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
 
   return (
     <div
-      className={`border-t border-slate-200 dark:border-[#1D293D] bg-slate-50/70 dark:bg-[#0F172B] transition-all duration-300 ${
-        collapsed ? "overflow-visible p-2.5 space-y-2" : "overflow-hidden p-3 space-y-3"
+      className={`relative z-50 border-t border-slate-200 dark:border-[#1D293D] bg-slate-50/70 dark:bg-[#0F172B] transition-all duration-300 overflow-visible ${
+        collapsed ? "p-2.5 space-y-2" : "p-3 space-y-3"
       }`}
     >
       {/* 3-Column Utility Grid (Figma #1159:1260) */}
@@ -156,7 +156,7 @@ export const SidebarFooter: React.FC<SidebarFooterProps> = ({
         {/* User Popover Menu */}
         {menuOpen && (
           <div
-            className={`absolute z-[60] mb-2 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172B] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
+            className={`absolute z-[100] mb-2 w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172B] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
               collapsed ? "bottom-0 left-full ml-3" : "bottom-full left-0 mb-2"
             }`}
           >

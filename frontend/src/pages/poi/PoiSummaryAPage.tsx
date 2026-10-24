@@ -147,8 +147,6 @@ export const PoiSummaryAPage: React.FC = () => {
           { label: "POI Summary-A" }
         ]}
         title="POI Stop Duration Performance"
-        badge="AGGREGATE SUMMARY"
-        badgeVariant="cyan"
         description="Review visitor volumes and stop-duration performance across configured points of interest."
       />
 
@@ -165,7 +163,7 @@ export const PoiSummaryAPage: React.FC = () => {
         placeholder="Filter by POI name, geocode, or branch..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

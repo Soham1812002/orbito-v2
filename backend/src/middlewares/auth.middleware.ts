@@ -9,14 +9,22 @@ interface JwtPayload {
 }
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const authHeader = req.headers.authorization;
+  let token = req.cookies?.orbito_access_token;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ message: "Unauthorized: Invalid or missing token" });
-    return;
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
   }
 
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    res.status(401).json({
+      message: "Unauthorized: Invalid or missing token",
+      code: "UNAUTHORIZED"
+    });
+    return;
+  }
 
   try {
     const decoded = jwt.verify(token, ENV.JWT_SECRET) as JwtPayload;
@@ -38,7 +46,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     });
 
     if (!user || !user.isActive) {
-      res.status(401).json({ message: "Unauthorized: User not found or inactive" });
+      res.status(401).json({
+        message: "Unauthorized: User not found or inactive",
+        code: "UNAUTHORIZED"
+      });
       return;
     }
 
@@ -66,9 +77,15 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     next();
   } catch (err: any) {
     if (err.name === "TokenExpiredError") {
-      res.status(401).json({ message: "Token Expired" });
+      res.status(401).json({
+        message: "Token Expired",
+        code: "TOKEN_EXPIRED"
+      });
       return;
     }
-    res.status(401).json({ message: "Unauthorized: Invalid token" });
+    res.status(401).json({
+      message: "Unauthorized: Invalid token",
+      code: "UNAUTHORIZED"
+    });
   }
 };

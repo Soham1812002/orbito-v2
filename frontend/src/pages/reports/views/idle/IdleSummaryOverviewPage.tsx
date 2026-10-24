@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import type { ColDef } from "ag-grid-community";
 import { Clock, ArrowUpRight } from "lucide-react";
 import { ReportBreadcrumbs } from "@/pages/reports/components/ReportBreadcrumbs";
 import { ReportKpiCards } from "@/pages/reports/components/ReportKpiCards";
 import { ReportFilterBar } from "@/pages/reports/components/ReportFilterBar";
 import { ReportExportToolbar } from "@/pages/reports/components/ReportExportToolbar";
+import { AppDataTable } from "@/components/common/AppDataTable";
 import { reportsApi } from "@/api/reports.api";
 import { IdleOverviewRow, ReportKpiMetric, ReportFilterState } from "@/types/reports.types";
 
@@ -31,6 +33,98 @@ export const IdleSummaryOverviewPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [filters.search, filters.dateRange, filters.vehicle]);
+
+  const columns = useMemo<ColDef<IdleOverviewRow>[]>(
+    () => [
+      {
+        headerName: "Vehicle Details",
+        field: "vehicleNo",
+        minWidth: 160,
+        cellRenderer: (params: any) => (
+          <span className="font-bold text-slate-900 dark:text-white font-mono text-xs">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Branch",
+        field: "branch",
+        minWidth: 130,
+        cellRenderer: (params: any) => (
+          <span className="text-slate-700 dark:text-slate-300">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Driver",
+        field: "driverName",
+        minWidth: 140,
+        cellRenderer: (params: any) => (
+          <span className="font-semibold text-slate-800 dark:text-slate-200">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Total Idle Events",
+        field: "totalIdleEvents",
+        minWidth: 130,
+        cellRenderer: (params: any) => (
+          <span className="px-2.5 py-0.5 rounded-full font-mono text-2xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+            {params.value} Events
+          </span>
+        )
+      },
+      {
+        headerName: "Idle Duration",
+        field: "totalIdleTime",
+        minWidth: 120,
+        cellRenderer: (params: any) => (
+          <span className="font-mono font-bold text-2xs text-amber-600 dark:text-amber-400">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Longest Idle",
+        field: "longestIdle",
+        minWidth: 120,
+        cellRenderer: (params: any) => (
+          <span className="font-mono text-2xs text-slate-600 dark:text-slate-300">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Est. Fuel Wasted",
+        field: "fuelWastedLitres",
+        minWidth: 130,
+        cellRenderer: (params: any) => (
+          <span className="font-mono font-semibold text-2xs text-rose-600 dark:text-rose-400">
+            {params.value} L
+          </span>
+        )
+      },
+      {
+        headerName: "Actions",
+        field: "vehicleNo",
+        minWidth: 120,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: any) => (
+          <Link
+            to={`/reports/idle-summary/${encodeURIComponent(params.value)}`}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white font-semibold text-2xs transition-colors"
+          >
+            <span>Idle Events</span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        )
+      }
+    ],
+    []
+  );
 
   return (
     <div className="space-y-6">
@@ -62,73 +156,14 @@ export const IdleSummaryOverviewPage: React.FC = () => {
         dataToExport={rows}
       />
 
-      <div className="panel-card !p-0 overflow-hidden border border-slate-200/80 dark:border-[#1D293D]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-[#121B2E] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4">Vehicle Details</th>
-                <th className="py-3.5 px-4">Branch</th>
-                <th className="py-3.5 px-4">Driver</th>
-                <th className="py-3.5 px-4 text-center">Total Idle Events</th>
-                <th className="py-3.5 px-4 text-center">Idle Duration</th>
-                <th className="py-3.5 px-4 text-center">Longest Idle</th>
-                <th className="py-3.5 px-4 text-center">Est. Fuel Wasted</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-              {rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                >
-                  <td className="py-3.5 px-4">
-                    <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-                      {row.vehicleNo}
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
-                    {row.branch}
-                  </td>
-
-                  <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                    {row.driverName}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-center">
-                    <span className="px-2.5 py-0.5 rounded-full font-mono text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
-                      {row.totalIdleEvents} Events
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-center font-mono font-bold text-amber-600 dark:text-amber-400">
-                    {row.totalIdleTime}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-center font-mono text-slate-600 dark:text-slate-300">
-                    {row.longestIdle}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-center font-mono font-semibold text-rose-600 dark:text-rose-400">
-                    {row.fuelWastedLitres} L
-                  </td>
-
-                  <td className="py-3.5 px-4 text-right">
-                    <Link
-                      to={`/reports/idle-summary/${encodeURIComponent(row.vehicleNo)}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white font-semibold text-xs transition-colors"
-                    >
-                      <span>Idle Events</span>
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Responsive Data Table using AppDataTable */}
+      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+        <AppDataTable<IdleOverviewRow>
+          rowData={rows}
+          columnDefs={columns}
+          isLoading={isLoading}
+          total={rows.length}
+        />
       </div>
     </div>
   );

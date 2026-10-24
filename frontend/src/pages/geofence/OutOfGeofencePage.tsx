@@ -189,8 +189,6 @@ export const OutOfGeofencePage: React.FC = () => {
           { label: "Out-of-Geofence" }
         ]}
         title="Out-of-Geofence Security Incidents"
-        badge="INCIDENT REGISTER"
-        badgeVariant="alert"
         description="Real-time exception register for unauthorized route departures, corridor breaches, and security alerts."
       />
 
@@ -203,7 +201,7 @@ export const OutOfGeofencePage: React.FC = () => {
         placeholder="Filter by vehicle registration, driver, or location..."
       />
 
-      <div className="panel-card overflow-hidden">
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
           rowData={data}
           columnDefs={columnDefs}

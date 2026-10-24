@@ -24,6 +24,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     if (location.pathname.startsWith("/system-config")) initial["sys-config"] = true;
     else if (location.pathname.startsWith("/app-config")) initial["app-config"] = true;
     else if (location.pathname.startsWith("/reports")) initial["reports"] = true;
+    else if (location.pathname.startsWith("/licensing")) initial["licensing"] = true;
+    else if (location.pathname.startsWith("/maintenance")) initial["maintenance"] = true;
+    else if (location.pathname.startsWith("/operations")) initial["dispatch-operations"] = true;
+    else if (location.pathname.startsWith("/users")) initial["users"] = true;
+    else if (location.pathname.startsWith("/poi")) initial["poi"] = true;
+    else if (location.pathname.startsWith("/geofence")) initial["geofence"] = true;
+    else if (location.pathname.startsWith("/alerts")) initial["alerts"] = true;
     return initial;
   });
 
@@ -32,14 +39,28 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   const [flyoutSearch, setFlyoutSearch] = useState("");
   const flyoutTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-expand menu when entering its child routes and collapse other sections
+  // Auto-expand menu when entering its child routes and maintain active parent section
   useEffect(() => {
     if (location.pathname.startsWith("/system-config")) {
-      setOpenSubmenus({ "sys-config": true });
+      setOpenSubmenus((prev) => ({ ...prev, "sys-config": true }));
     } else if (location.pathname.startsWith("/app-config")) {
-      setOpenSubmenus({ "app-config": true });
+      setOpenSubmenus((prev) => ({ ...prev, "app-config": true }));
     } else if (location.pathname.startsWith("/reports")) {
-      setOpenSubmenus({ "reports": true });
+      setOpenSubmenus((prev) => ({ ...prev, "reports": true }));
+    } else if (location.pathname.startsWith("/licensing")) {
+      setOpenSubmenus((prev) => ({ ...prev, "licensing": true }));
+    } else if (location.pathname.startsWith("/maintenance")) {
+      setOpenSubmenus((prev) => ({ ...prev, "maintenance": true }));
+    } else if (location.pathname.startsWith("/operations")) {
+      setOpenSubmenus((prev) => ({ ...prev, "dispatch-operations": true }));
+    } else if (location.pathname.startsWith("/users")) {
+      setOpenSubmenus((prev) => ({ ...prev, "users": true }));
+    } else if (location.pathname.startsWith("/poi")) {
+      setOpenSubmenus((prev) => ({ ...prev, "poi": true }));
+    } else if (location.pathname.startsWith("/geofence")) {
+      setOpenSubmenus((prev) => ({ ...prev, "geofence": true }));
+    } else if (location.pathname.startsWith("/alerts")) {
+      setOpenSubmenus((prev) => ({ ...prev, "alerts": true }));
     }
   }, [location.pathname]);
 
@@ -124,51 +145,60 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     onMouseLeave={() => collapsed && hasChildren && handleFlyoutLeave()}
                   >
                     {hasChildren && !collapsed ? (
-                      <button
-                        type="button"
-                        onClick={(e) => toggleSubmenu(item.key, e)}
-                        className={`transition-all duration-300 ease-in-out w-full justify-between px-3 gap-3 nav-item-base ${
+                      <div
+                        className={`w-full justify-between px-3 gap-2 nav-item-base ${
                           isParentActive
                             ? "nav-item-active"
                             : "nav-item-idle"
-                        } relative cursor-pointer text-left`}
-                        aria-expanded={isSubmenuOpen}
-                        aria-label={`${item.name} menu`}
+                        } relative flex items-center group/parent`}
                       >
-                        <div className="flex items-center gap-3 overflow-hidden">
+                        <NavLink
+                          to={item.path}
+                          onClick={() => {
+                            setOpenSubmenus((prev) => ({ ...prev, [item.key]: true }));
+                            if (onItemClick) onItemClick();
+                          }}
+                          className="flex items-center gap-3 overflow-hidden flex-1 min-w-0 py-1"
+                        >
                           <div className="relative shrink-0 flex items-center justify-center">
                             <AppIcon icon={IconComponent} size="md" />
-                            {item.badge && (
-                              <span
-                                className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-[#EF4444] ring-2 ring-white dark:ring-[#0F172B] animate-pulse"
-                                aria-hidden="true"
-                              />
-                            )}
                           </div>
-                          <span className="truncate whitespace-nowrap transition-all duration-300 ease-in-out max-w-[140px]">
+                          <span className="truncate whitespace-nowrap max-w-[140px]">
                             {item.name}
                           </span>
-                        </div>
+                        </NavLink>
 
-                        <div className="flex items-center gap-1.5 ml-auto">
+                        <div className="flex items-center gap-1.5 ml-auto shrink-0">
                           {item.badge && (
-                            <span className="badge-alert transition-all duration-300 ease-in-out max-w-[40px]">
+                            <span className="badge-alert max-w-[40px]">
                               {item.badge}
                             </span>
                           )}
-                          <ChevronDown
-                            className={`h-3.5 w-3.5 transition-transform duration-200 text-slate-400 dark:text-slate-500 ${
-                              isSubmenuOpen ? "rotate-180" : "rotate-0"
-                            }`}
-                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleSubmenu(item.key, e);
+                            }}
+                            className="p-1 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            aria-expanded={isSubmenuOpen}
+                            aria-label={`Toggle ${item.name} submenu`}
+                          >
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                                isSubmenuOpen ? "rotate-180 text-blue-600 dark:text-blue-400" : "rotate-0"
+                              }`}
+                            />
+                          </button>
                         </div>
-                      </button>
+                      </div>
                     ) : (
                       <NavLink
                         to={item.path}
                         onClick={onItemClick}
                         className={({ isActive }) =>
-                          `transition-all duration-300 ease-in-out ${
+                          `${
                             collapsed
                               ? "w-11 h-11 mx-auto justify-center !px-0 !gap-0"
                               : "w-full justify-between px-3 gap-3"
@@ -195,7 +225,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                           </div>
 
                           {!collapsed && (
-                            <span className="truncate whitespace-nowrap transition-all duration-300 ease-in-out max-w-[140px] opacity-100 translate-x-0">
+                            <span className="truncate whitespace-nowrap max-w-[140px] opacity-100 translate-x-0">
                               {item.name}
                             </span>
                           )}

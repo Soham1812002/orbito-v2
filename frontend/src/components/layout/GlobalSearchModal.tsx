@@ -69,6 +69,12 @@ export const searchIndex: SearchableMenuItem[] = [
   // Operations
   { id: "licensing", title: "Licensing", category: "Operations", path: "/licensing", icon: CreditCard },
   { id: "maintenance", title: "Fleet Maintenance", category: "Operations", path: "/maintenance", icon: Wrench },
+  { id: "ops-routes", title: "Route Corridors & Paths", category: "Advance Operations", path: "/operations/routes", keywords: ["transit", "waypoint", "speed cap", "corridor", "routes"], icon: Compass },
+  { id: "ops-allocations", title: "Corridor Allocations", category: "Advance Operations", path: "/operations/allocations", keywords: ["allocation", "schedule", "departure", "deviation"], icon: Navigation },
+  { id: "ops-crew", title: "Driver & Cleaner Rosters", category: "Advance Operations", path: "/operations/crew", keywords: ["driver pairing", "crew", "shift", "cleaner"], icon: Users },
+  { id: "ops-immobilizer", title: "Engine Immobilizer Log", category: "Advance Operations", path: "/operations/immobilizer", keywords: ["relay", "starter cut", "remote stop", "ignition"], icon: ShieldCheck },
+  { id: "ops-compliance", title: "Statutory Compliance Reminders", category: "Advance Operations", path: "/operations/compliance", keywords: ["insurance", "fitness", "puc", "license", "expiry"], icon: FileText },
+
 
   // Reports
   { id: "reports-hub", title: "Reports Catalog Navigator", category: "Fleet Reports", path: "/reports", icon: Grid },
@@ -308,12 +314,35 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               );
             })
           ) : (
-            <div className="py-12 text-center text-slate-400">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm font-semibold">No matching menu items found</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Try searching for "trip", "stoppage", "vehicles", or "roles"
+            <div className="py-12 px-4 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+                <Search className="h-6 w-6 opacity-60" />
+              </div>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                No matching results found for "{query}"
               </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+                Try searching for keywords like "routes", "immobilizer", "vehicles", or "reports".
+              </p>
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                >
+                  Clear search
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate("/reports");
+                    onClose();
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
+                >
+                  Browse Reports Navigator
+                </button>
+              </div>
             </div>
           )}
         </div>

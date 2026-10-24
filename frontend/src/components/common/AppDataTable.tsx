@@ -23,6 +23,8 @@ interface AppDataTableProps<T = any> {
   onRefresh?: () => void;
   actions?: React.ReactNode;
   height?: string | number;
+  rowHeight?: number;
+  headerHeight?: number;
 }
 
 export function AppDataTable<T = any>({
@@ -39,7 +41,9 @@ export function AppDataTable<T = any>({
   onSearchChange,
   onRefresh,
   actions,
-  height = "480px"
+  height = "480px",
+  rowHeight = 52,
+  headerHeight = 44
 }: AppDataTableProps<T>) {
   const { theme } = useTheme();
 
@@ -50,33 +54,35 @@ export function AppDataTable<T = any>({
   return (
     <div className="flex flex-col gap-3 w-full">
       {/* Table Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        {onSearchChange && (
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search table records..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
-            />
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              title="Refresh records"
-              className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-indigo-500" : ""}`} />
-            </button>
+      {(onSearchChange || actions) && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-1">
+          {onSearchChange && (
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search table records..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+              />
+            </div>
           )}
-          {actions}
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                title="Refresh records"
+                className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-indigo-500" : ""}`} />
+              </button>
+            )}
+            {actions}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Grid Container */}
       <div
@@ -91,6 +97,8 @@ export function AppDataTable<T = any>({
           columnDefs={columnDefs}
           onGridReady={onGridReady}
           rowSelection="single"
+          rowHeight={rowHeight}
+          headerHeight={headerHeight}
           animateRows={true}
           loading={isLoading}
           overlayLoadingTemplate={
@@ -154,3 +162,68 @@ export function AppDataTable<T = any>({
     </div>
   );
 }
+
+export interface TwoLineCellProps {
+  primary: React.ReactNode;
+  secondary?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+  mono?: boolean;
+}
+
+export const TwoLineCell: React.FC<TwoLineCellProps> = ({
+  primary,
+  secondary,
+  icon: Icon,
+  mono = false
+}) => {
+  return (
+    <div className="flex items-center gap-2.5 h-full min-w-0 py-1">
+      {Icon && <Icon className="h-4 w-4 shrink-0 text-slate-400" />}
+      <div className="flex flex-col justify-center min-w-0 leading-tight">
+        <span
+          className={`text-xs font-semibold text-slate-900 dark:text-white truncate ${
+            mono ? "font-mono" : ""
+          }`}
+          title={typeof primary === "string" ? primary : undefined}
+        >
+          {primary}
+        </span>
+        {secondary && (
+          <span
+            className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5"
+            title={typeof secondary === "string" ? secondary : undefined}
+          >
+            {secondary}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export interface StatusBadgeCellProps {
+  status: string | boolean;
+  activeLabel?: string;
+  inactiveLabel?: string;
+}
+
+export const StatusBadgeCell: React.FC<StatusBadgeCellProps> = ({
+  status,
+  activeLabel = "Active",
+  inactiveLabel = "Inactive"
+}) => {
+  const isActive = status === true || status === "active" || status === "Active";
+  return (
+    <div className="flex items-center justify-center h-full w-full">
+      <span
+        className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs-compact font-bold uppercase tracking-wider ${
+          isActive
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+            : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+        }`}
+      >
+        {isActive ? activeLabel : inactiveLabel}
+      </span>
+    </div>
+  );
+};

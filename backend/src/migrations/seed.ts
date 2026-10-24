@@ -10,10 +10,33 @@ import {
   UserPasswordHistory,
   AuditLog,
   SystemConfig,
-  AppConfig
+  AppConfig,
+  Driver,
+  Vehicle,
+  UserGroup,
+  CompanyLicense,
+  ResellerLicense,
+  VehicleLicense,
+  UserLicense,
+  Geofence,
+  Poi
 } from "../models/index.js";
 import { PERMISSIONS, ROLES } from "../utils/constants.js";
-import { SEED_USERS, SEED_AUDIT_LOGS, SEED_SYSTEM_CONFIGS, SEED_APP_CONFIGS } from "./seedData.js";
+import {
+  SEED_USERS,
+  SEED_AUDIT_LOGS,
+  SEED_SYSTEM_CONFIGS,
+  SEED_APP_CONFIGS,
+  SEED_DRIVERS,
+  SEED_VEHICLES,
+  SEED_USER_GROUPS,
+  SEED_COMPANY_LICENSES,
+  SEED_RESELLER_LICENSES,
+  SEED_VEHICLE_LICENSES,
+  SEED_USER_LICENSES,
+  SEED_GEOFENCES,
+  SEED_POIS
+} from "./seedData.js";
 
 const BCRYPT_ROUNDS = 10;
 
@@ -36,7 +59,17 @@ export async function runSeeds(): Promise<void> {
       { code: PERMISSIONS.VIEW_SYSTEM_CONFIG, action: "VIEW", entity: "SYSTEM_CONFIG", description: "View system configuration modules" },
       { code: PERMISSIONS.MANAGE_SYSTEM_CONFIG, action: "MANAGE", entity: "SYSTEM_CONFIG", description: "Create and update system configurations" },
       { code: PERMISSIONS.VIEW_APP_CONFIG, action: "VIEW", entity: "APP_CONFIG", description: "View app configuration modules" },
-      { code: PERMISSIONS.MANAGE_APP_CONFIG, action: "MANAGE", entity: "APP_CONFIG", description: "Create and update app configurations" }
+      { code: PERMISSIONS.MANAGE_APP_CONFIG, action: "MANAGE", entity: "APP_CONFIG", description: "Create and update app configurations" },
+      { code: PERMISSIONS.VIEW_MAINTENANCE, action: "VIEW", entity: "MAINTENANCE", description: "View vehicle maintenance reminders and schedules" },
+      { code: PERMISSIONS.MANAGE_MAINTENANCE, action: "MANAGE", entity: "MAINTENANCE", description: "Create, update, and manage maintenance reminders" },
+      { code: PERMISSIONS.VIEW_EXPENSE, action: "VIEW", entity: "EXPENSE", description: "View vehicle expenses and operating costs" },
+      { code: PERMISSIONS.MANAGE_EXPENSE, action: "MANAGE", entity: "EXPENSE", description: "Record and manage vehicle operating expenses" },
+      { code: PERMISSIONS.VIEW_ALERT, action: "VIEW", entity: "ALERT", description: "View vehicle alerts and triggered incidents" },
+      { code: PERMISSIONS.MANAGE_ALERT, action: "MANAGE", entity: "ALERT", description: "Configure alert rules and acknowledge incident events" },
+      { code: PERMISSIONS.VIEW_DISPATCH, action: "VIEW", entity: "DISPATCH", description: "View routes, allocations, crew rosters, and immobilizer logs" },
+      { code: PERMISSIONS.MANAGE_DISPATCH, action: "MANAGE", entity: "DISPATCH", description: "Create and manage corridors, allocations, crew, and commands" },
+      { code: PERMISSIONS.VIEW_COMPLIANCE, action: "VIEW", entity: "COMPLIANCE", description: "View statutory and regulatory compliance reminders" },
+      { code: PERMISSIONS.MANAGE_COMPLIANCE, action: "MANAGE", entity: "COMPLIANCE", description: "Create and update statutory compliance reminders" }
     ];
 
     const permissionsMap = new Map<string, Permission>();
@@ -90,7 +123,17 @@ export async function runSeeds(): Promise<void> {
         PERMISSIONS.VIEW_SYSTEM_CONFIG,
         PERMISSIONS.MANAGE_SYSTEM_CONFIG,
         PERMISSIONS.VIEW_APP_CONFIG,
-        PERMISSIONS.MANAGE_APP_CONFIG
+        PERMISSIONS.MANAGE_APP_CONFIG,
+        PERMISSIONS.VIEW_MAINTENANCE,
+        PERMISSIONS.MANAGE_MAINTENANCE,
+        PERMISSIONS.VIEW_EXPENSE,
+        PERMISSIONS.MANAGE_EXPENSE,
+        PERMISSIONS.VIEW_ALERT,
+        PERMISSIONS.MANAGE_ALERT,
+        PERMISSIONS.VIEW_DISPATCH,
+        PERMISSIONS.MANAGE_DISPATCH,
+        PERMISSIONS.VIEW_COMPLIANCE,
+        PERMISSIONS.MANAGE_COMPLIANCE
       ],
       [ROLES.FLEET_MANAGER]: [
         PERMISSIONS.VIEW_USER,
@@ -98,26 +141,52 @@ export async function runSeeds(): Promise<void> {
         PERMISSIONS.VIEW_SYSTEM_CONFIG,
         PERMISSIONS.MANAGE_SYSTEM_CONFIG,
         PERMISSIONS.VIEW_APP_CONFIG,
-        PERMISSIONS.MANAGE_APP_CONFIG
+        PERMISSIONS.MANAGE_APP_CONFIG,
+        PERMISSIONS.VIEW_MAINTENANCE,
+        PERMISSIONS.MANAGE_MAINTENANCE,
+        PERMISSIONS.VIEW_EXPENSE,
+        PERMISSIONS.MANAGE_EXPENSE,
+        PERMISSIONS.VIEW_ALERT,
+        PERMISSIONS.MANAGE_ALERT,
+        PERMISSIONS.VIEW_DISPATCH,
+        PERMISSIONS.MANAGE_DISPATCH,
+        PERMISSIONS.VIEW_COMPLIANCE,
+        PERMISSIONS.MANAGE_COMPLIANCE
       ],
       [ROLES.BRANCH_OPERATOR]: [
         PERMISSIONS.VIEW_USER,
         PERMISSIONS.VIEW_AUDIT_LOG,
         PERMISSIONS.VIEW_SYSTEM_CONFIG,
         PERMISSIONS.VIEW_APP_CONFIG,
-        PERMISSIONS.MANAGE_APP_CONFIG
+        PERMISSIONS.MANAGE_APP_CONFIG,
+        PERMISSIONS.VIEW_MAINTENANCE,
+        PERMISSIONS.VIEW_EXPENSE,
+        PERMISSIONS.VIEW_ALERT,
+        PERMISSIONS.MANAGE_ALERT,
+        PERMISSIONS.VIEW_DISPATCH,
+        PERMISSIONS.MANAGE_DISPATCH,
+        PERMISSIONS.VIEW_COMPLIANCE
       ],
       [ROLES.OPERATIONS_LEAD]: [
         PERMISSIONS.VIEW_USER,
         PERMISSIONS.VIEW_AUDIT_LOG,
         PERMISSIONS.VIEW_SYSTEM_CONFIG,
         PERMISSIONS.VIEW_APP_CONFIG,
-        PERMISSIONS.MANAGE_APP_CONFIG
+        PERMISSIONS.MANAGE_APP_CONFIG,
+        PERMISSIONS.VIEW_MAINTENANCE,
+        PERMISSIONS.VIEW_EXPENSE,
+        PERMISSIONS.VIEW_ALERT,
+        PERMISSIONS.MANAGE_ALERT,
+        PERMISSIONS.VIEW_DISPATCH,
+        PERMISSIONS.MANAGE_DISPATCH,
+        PERMISSIONS.VIEW_COMPLIANCE,
+        PERMISSIONS.MANAGE_COMPLIANCE
       ],
       [ROLES.USER]: [
         PERMISSIONS.VIEW_USER,
         PERMISSIONS.VIEW_SYSTEM_CONFIG,
-        PERMISSIONS.VIEW_APP_CONFIG
+        PERMISSIONS.VIEW_APP_CONFIG,
+        PERMISSIONS.VIEW_ALERT
       ]
     };
 
@@ -251,6 +320,96 @@ export async function runSeeds(): Promise<void> {
       }
     }
     logger.info(`App configs seeded (${SEED_APP_CONFIGS.length} items).`);
+
+    // 8. Seed Drivers
+    for (const driver of SEED_DRIVERS) {
+      await Driver.findOrCreate({
+        where: { licenseNumber: driver.licenseNumber },
+        defaults: driver,
+        transaction
+      });
+    }
+    logger.info(`Drivers seeded (${SEED_DRIVERS.length} records).`);
+
+    // 9. Seed Vehicles
+    for (const vehicle of SEED_VEHICLES) {
+      await Vehicle.findOrCreate({
+        where: { plateNumber: vehicle.plateNumber },
+        defaults: vehicle as any,
+        transaction
+      });
+    }
+    logger.info(`Vehicles seeded (${SEED_VEHICLES.length} records).`);
+
+    // 10. Seed User Groups
+    for (const group of SEED_USER_GROUPS) {
+      await UserGroup.findOrCreate({
+        where: { name: group.name, company: group.company },
+        defaults: group as any,
+        transaction
+      });
+    }
+    logger.info(`User groups seeded (${SEED_USER_GROUPS.length} records).`);
+
+    // 11. Seed Company Licenses
+    for (const compLic of SEED_COMPANY_LICENSES) {
+      await CompanyLicense.findOrCreate({
+        where: { licenseNumber: compLic.licenseNumber },
+        defaults: compLic as any,
+        transaction
+      });
+    }
+    logger.info(`Company licenses seeded (${SEED_COMPANY_LICENSES.length} records).`);
+
+    // 12. Seed Reseller Licenses
+    for (const resLic of SEED_RESELLER_LICENSES) {
+      await ResellerLicense.findOrCreate({
+        where: { licenseNumber: resLic.licenseNumber },
+        defaults: resLic as any,
+        transaction
+      });
+    }
+    logger.info(`Reseller licenses seeded (${SEED_RESELLER_LICENSES.length} records).`);
+
+    // 13. Seed Vehicle Licenses
+    for (const vehLic of SEED_VEHICLE_LICENSES) {
+      await VehicleLicense.findOrCreate({
+        where: { licenseNumber: vehLic.licenseNumber },
+        defaults: vehLic as any,
+        transaction
+      });
+    }
+    logger.info(`Vehicle licenses seeded (${SEED_VEHICLE_LICENSES.length} records).`);
+
+    // 14. Seed User Licenses
+    for (const userLic of SEED_USER_LICENSES) {
+      await UserLicense.findOrCreate({
+        where: { licenseNumber: userLic.licenseNumber },
+        defaults: userLic as any,
+        transaction
+      });
+    }
+    logger.info(`User licenses seeded (${SEED_USER_LICENSES.length} records).`);
+
+    // 15. Seed Geofences
+    for (const geo of SEED_GEOFENCES) {
+      await Geofence.findOrCreate({
+        where: { name: geo.name },
+        defaults: geo as any,
+        transaction
+      });
+    }
+    logger.info(`Geofences seeded (${SEED_GEOFENCES.length} records).`);
+
+    // 16. Seed POIs
+    for (const poiItem of SEED_POIS) {
+      await Poi.findOrCreate({
+        where: { geoCode: poiItem.geoCode },
+        defaults: poiItem as any,
+        transaction
+      });
+    }
+    logger.info(`POIs seeded (${SEED_POIS.length} records).`);
 
     await transaction.commit();
     logger.info("Database seeding completed successfully!");

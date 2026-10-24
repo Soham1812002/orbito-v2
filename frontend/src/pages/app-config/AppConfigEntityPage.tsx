@@ -1,19 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus,
-  RefreshCw,
-  Search,
-  Download,
   Edit2,
   Trash2,
-  Copy,
-  AlertCircle,
-  Loader2
+  Copy
 } from "lucide-react";
+import { ColDef } from "ag-grid-community";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/common/Button";
 import { Modal } from "@/components/common/Modal";
+import { AppDataTable, StatusBadgeCell } from "@/components/common/AppDataTable";
+import { TableFilterBar } from "@/components/common/TableFilterBar";
 import { showToast } from "@/lib/toast";
 import { appConfigApi, AppConfigItem } from "@/api/appConfig.api";
 import { ConfigEntityConfig } from "@/types/config.types";
@@ -154,182 +151,140 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
     }
   };
 
+  // Build AG Grid Column Definitions with Center-Aligned Badges & Actions
+  const gridColumns = useMemo<ColDef<AppConfigItem>[]>(() => {
+    const cols: ColDef<AppConfigItem>[] = config.columns.map((c) => {
+      const isStatus = c.key === "status" || c.key === "isActive";
+      const isHealth = c.key === "health";
+      const isMono = ["code", "plateNumber", "imei", "iccid", "phone"].includes(c.key);
+
+      return {
+        headerName: c.label,
+        field: c.key as any,
+        minWidth: isStatus ? 130 : 150,
+        flex: 1,
+        cellRenderer: (params: any) => {
+          if (!params.data) return null;
+          const val = params.value;
+
+          if (isStatus) {
+            return <StatusBadgeCell status={val} />;
+          }
+
+          if (isHealth) {
+            const isOnline = val === "Online";
+            return (
+              <div className="flex items-center justify-center h-full w-full">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs-compact font-bold uppercase tracking-wider ${
+                    isOnline
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                  }`}
+                >
+                  {val || "Offline"}
+                </span>
+              </div>
+            );
+          }
+
+          if (isMono) {
+            return (
+              <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={String(val ?? "")}>
+                {val ?? "—"}
+              </span>
+            );
+          }
+
+          return (
+            <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate" title={String(val ?? "")}>
+              {val ?? "—"}
+            </span>
+          );
+        }
+      };
+    });
+
+    cols.push({
+      headerName: "Actions",
+      field: "id" as any,
+      minWidth: 120,
+      width: 120,
+      sortable: false,
+      filter: false,
+      pinned: "right",
+      cellRenderer: (params: any) => {
+        const item = params.data;
+        if (!item) return null;
+        return (
+          <div className="flex items-center justify-end gap-1 h-full w-full py-1">
+            <button
+              type="button"
+              onClick={() => handleOpenCopy(item)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Duplicate record"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenEdit(item)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Edit record"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setItemToDelete(item);
+                setDeleteModalOpen(true);
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Delete record"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
+      }
+    });
+
+    return cols;
+  }, [config.columns]);
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={config.title}
         description={config.description}
-        badge={config.badge}
-        actions={
-          <div className="flex items-center space-x-3">
-            <Button variant="secondary" onClick={handleExportCsv} className="hidden sm:inline-flex">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button variant="primary" onClick={handleOpenCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add {config.singularTitle}
-            </Button>
-          </div>
-        }
       />
 
-      {/* Filter and Search Toolbar */}
-      <div className="panel-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder={`Search ${config.title}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#1D293D] bg-white dark:bg-[#111C38] text-slate-900 dark:text-white focus-ring transition-colors"
-          />
-        </div>
+      {/* POI-Standard Unified Filter Bar */}
+      <TableFilterBar
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder={`Search ${config.title}...`}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        statusOptions={["ALL", "ACTIVE", "INACTIVE"]}
+        onRefresh={() => refetch()}
+        isRefreshing={isFetching}
+        onExport={handleExportCsv}
+        exportLabel="Export CSV"
+        onCreateNew={handleOpenCreate}
+        createLabel={`Add ${config.singularTitle}`}
+      />
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
-          <div className="flex rounded-lg border border-slate-200 dark:border-[#1D293D] p-0.5 bg-slate-50 dark:bg-[#0b1329]">
-            {["ALL", "ACTIVE", "INACTIVE"].map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                  statusFilter === st
-                    ? "bg-white dark:bg-[#162244] text-[#007AFF] shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="h-9 w-9 p-0 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white"
-            title="Refresh Table"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin text-blue-500" : ""}`} />
-          </Button>
-        </div>
-      </div>
-
-      {/* Data Table */}
-      <div className="panel-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1D293D] bg-slate-50/75 dark:bg-[#0b1329]/50 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                {config.columns.map((col) => (
-                  <th key={col.key} className="px-5 py-3.5 whitespace-nowrap">
-                    {col.label}
-                  </th>
-                ))}
-                <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1D293D]/60 text-sm">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={config.columns.length + 1} className="py-16 text-center text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#007AFF]" />
-                    <span>Loading {config.title}...</span>
-                  </td>
-                </tr>
-              ) : filteredItems.length === 0 ? (
-                <tr>
-                  <td colSpan={config.columns.length + 1} className="py-16 text-center text-slate-400">
-                    <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-500" />
-                    <p className="font-medium text-slate-700 dark:text-slate-300">No records found</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {searchTerm ? "Try adjusting your search criteria" : `Click 'Add ${config.singularTitle}' to create the first record.`}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                filteredItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-slate-50/80 dark:hover:bg-[#162244]/40 transition-colors group"
-                  >
-                    {config.columns.map((col) => {
-                      const val = item[col.key];
-                      if (col.key === "status" || col.key === "isActive") {
-                        const isAct = val === "Active" || val === true || item.isActive;
-                        return (
-                          <td key={col.key} className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={isAct ? "badge-emerald" : "badge-rose"}>
-                              {isAct ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                        );
-                      }
-                      if (col.key === "health") {
-                        const isOnline = val === "Online";
-                        return (
-                          <td key={col.key} className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={isOnline ? "badge-emerald" : "badge-amber"}>
-                              {val || "Offline"}
-                            </span>
-                          </td>
-                        );
-                      }
-                      if (col.key === "code" || col.key === "plateNumber" || col.key === "imei" || col.key === "iccid") {
-                        return (
-                          <td key={col.key} className="px-5 py-3.5 font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                            {val ?? "—"}
-                          </td>
-                        );
-                      }
-                      return (
-                        <td key={col.key} className="px-5 py-3.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                          {val ?? "—"}
-                        </td>
-                      );
-                    })}
-                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenCopy(item)}
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-blue-500"
-                          title="Duplicate Record"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenEdit(item)}
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-amber-500"
-                          title="Edit Record"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setItemToDelete(item);
-                            setDeleteModalOpen(true);
-                          }}
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-rose-500"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* AG Grid Data Table Container with Standard Panel-Card Padding */}
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
+        <AppDataTable
+          rowData={filteredItems}
+          columnDefs={gridColumns}
+          isLoading={isLoading}
+          total={filteredItems.length}
+          height="520px"
+        />
       </div>
 
       {/* Form Modal */}

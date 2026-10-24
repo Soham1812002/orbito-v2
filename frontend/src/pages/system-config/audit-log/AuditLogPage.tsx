@@ -10,7 +10,9 @@ import {
   Loader2
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Button } from "@/components/common/Button";
+import { AppDataTable } from "@/components/common/AppDataTable";
+import { TableFilterBar } from "@/components/common/TableFilterBar";
+import type { ColDef } from "ag-grid-community";
 import { showToast } from "@/lib/toast";
 import { auditLogApi, AuditLogItem } from "@/api/auditLog.api";
 
@@ -78,6 +80,124 @@ export const AuditLogPage: React.FC = () => {
     showToast.success("Audit log export downloaded successfully!");
   };
 
+  const columns = useMemo<ColDef<AuditLogItem>[]>(
+    () => [
+      {
+        headerName: "Timestamp",
+        field: "timestamp",
+        minWidth: 170,
+        cellRenderer: (params: any) => (
+          <span className="font-mono text-2xs text-slate-500 dark:text-slate-400">
+            {new Date(params.value).toLocaleString("en-GB", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit"
+            })}
+          </span>
+        )
+      },
+      {
+        headerName: "User",
+        field: "userName",
+        minWidth: 190,
+        cellRenderer: (params: any) => {
+          const log: AuditLogItem = params.data;
+          if (!log) return null;
+          const initials = log.userInitials || log.userName?.slice(0, 2).toUpperCase() || "US";
+          return (
+            <div className="h-full flex items-center gap-2.5 min-w-0">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-[10px]">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-xs text-slate-900 dark:text-white leading-tight truncate">
+                  {log.userName}
+                </p>
+                <p className="text-2xs text-slate-400 leading-tight truncate">
+                  {log.userRole}
+                </p>
+              </div>
+            </div>
+          );
+        }
+      },
+      {
+        headerName: "Action & Module",
+        field: "action",
+        minWidth: 170,
+        cellRenderer: (params: any) => {
+          const log: AuditLogItem = params.data;
+          if (!log) return null;
+          return (
+            <div className="min-w-0">
+              <span className="font-mono font-bold text-slate-800 dark:text-white text-xs block truncate">
+                {log.action}
+              </span>
+              <p className="text-2xs text-blue-500 font-medium truncate">
+                {log.module}
+              </p>
+            </div>
+          );
+        }
+      },
+      {
+        headerName: "Details",
+        field: "details",
+        minWidth: 260,
+        flex: 1.5,
+        cellRenderer: (params: any) => (
+          <span className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2" title={params.value}>
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "IP Address",
+        field: "ipAddress",
+        minWidth: 130,
+        cellRenderer: (params: any) => (
+          <span className="font-mono text-2xs text-slate-500 dark:text-slate-400">
+            {params.value}
+          </span>
+        )
+      },
+      {
+        headerName: "Status",
+        field: "status",
+        minWidth: 130,
+        cellRenderer: (params: any) => {
+          const status = params.value;
+          if (status === "SUCCESS") {
+            return (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                Success
+              </span>
+            );
+          }
+          if (status === "WARNING") {
+            return (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                Warning
+              </span>
+            );
+          }
+          return (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
+              <XCircle className="h-3.5 w-3.5 shrink-0" />
+              Failed
+            </span>
+          );
+        }
+      }
+    ],
+    []
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -87,28 +207,7 @@ export const AuditLogPage: React.FC = () => {
           { label: "Audit Log" }
         ]}
         title="Audit Log"
-        badge={`${metrics.total} EVENTS`}
-        badgeVariant="cyan"
         description="Review user activity, configuration changes, access events, and operational records across your fleet workspace."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              leftIcon={<RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />}
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="secondary"
-              leftIcon={<Download className="h-4 w-4" />}
-              onClick={handleExport}
-            >
-              Export CSV
-            </Button>
-          </div>
-        }
       />
 
       {/* Metric Counters Strip */}
@@ -135,130 +234,31 @@ export const AuditLogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & Filter Toolbar */}
-      <div className="panel-card p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by user, action, IP, or details..."
-              className="w-full rounded-xl bg-slate-50 dark:bg-[#162032] border border-slate-200 dark:border-[#1D293D] pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-            />
-          </div>
+      {/* Unified TableFilterBar */}
+      <TableFilterBar
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by user, action, IP, or details..."
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        statusOptions={["ALL", "SUCCESS", "WARNING", "FAILED"]}
+        onRefresh={() => refetch()}
+        isRefreshing={isFetching}
+        onExport={handleExport}
+        exportLabel="Export CSV"
+      />
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            {["ALL", "SUCCESS", "WARNING", "FAILED"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  statusFilter === status
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 dark:bg-[#162032] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Audit Log Table */}
-      <div className="panel-card overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-slate-400">
-            <Loader2 className="h-6 w-6 animate-spin mr-2 text-blue-500" />
-            <span className="text-xs font-medium">Loading audit trail from database...</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-[#162032] border-b border-slate-200 dark:border-[#1D293D] text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-                <tr>
-                  <th className="px-4 py-3">Timestamp</th>
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Action & Module</th>
-                  <th className="px-4 py-3">Details</th>
-                  <th className="px-4 py-3">IP Address</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-[#1D293D]">
-                {logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
-                      No matching audit log records found.
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-[#162032]/40 transition-colors">
-                      <td className="px-4 py-3.5 whitespace-nowrap font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                        {new Date(log.timestamp).toLocaleString("en-GB", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit"
-                        })}
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-[10px]">
-                            {log.userInitials || log.userName?.slice(0, 2).toUpperCase() || "US"}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-900 dark:text-white leading-tight">{log.userName}</p>
-                            <p className="text-[10px] text-slate-400 leading-tight">{log.userRole}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div>
-                          <span className="font-mono font-bold text-slate-800 dark:text-white text-[11px]">
-                            {log.action}
-                          </span>
-                          <p className="text-[10px] text-blue-500 font-medium">{log.module}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-700 dark:text-slate-300 max-w-md">
-                        <span className="line-clamp-2">{log.details}</span>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap font-mono text-slate-500 dark:text-slate-400 text-[11px]">
-                        {log.ipAddress}
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        {log.status === "SUCCESS" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
-                            <CheckCircle2 className="h-3 w-3" />
-                            SUCCESS
-                          </span>
-                        )}
-                        {log.status === "WARNING" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40">
-                            <AlertTriangle className="h-3 w-3" />
-                            WARNING
-                          </span>
-                        )}
-                        {log.status === "FAILED" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/40">
-                            <XCircle className="h-3 w-3" />
-                            FAILED
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Main Data Table with Standard Panel-Card Padding */}
+      <div className="panel-card p-4 sm:p-5 overflow-hidden">
+        <AppDataTable<AuditLogItem>
+          rowData={logs}
+          columnDefs={columns}
+          isLoading={isLoading}
+          total={totalCount}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p)}
+        />
       </div>
     </div>
   );

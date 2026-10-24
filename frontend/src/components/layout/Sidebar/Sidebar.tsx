@@ -11,12 +11,10 @@ export const Sidebar: React.FC = () => {
     const isCollapsed = isMobile ? false : collapsed;
     return (
       <div
-        className={`flex h-full flex-col justify-between panel-sidebar select-none ${
-          isCollapsed ? "overflow-visible" : "overflow-hidden"
-        }`}
+        className="flex h-full flex-col justify-between panel-sidebar select-none overflow-visible"
       >
         <div
-          className={`flex flex-col flex-1 ${
+          className={`flex flex-col flex-1 min-h-0 ${
             isCollapsed ? "overflow-visible" : "overflow-hidden"
           }`}
         >
@@ -50,8 +48,8 @@ export const Sidebar: React.FC = () => {
         aria-label="Sidebar navigation"
       >
         <div
-          className={`fixed inset-y-0 left-0 z-30 h-full transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-            collapsed ? "w-20 overflow-visible" : "w-64 overflow-hidden"
+          className={`fixed inset-y-0 left-0 z-30 h-full transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-visible ${
+            collapsed ? "w-20" : "w-64"
           }`}
         >
           {renderContent(false)}
