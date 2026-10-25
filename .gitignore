@@ -39,3 +39,4 @@ pgdata/
 *.njsproj
 *.sln
 *.sw?
+docker-compose.dev.yml

@@ -119,6 +119,13 @@ Configure the following secrets in GitHub Repository Settings -> Secrets and var
 - **Placeholder Values:** Only maintain `.env.example` in repository commits.
 - **Persistent Data:** Never delete or alter `orbito_pgdata` or `backend_uploads` volumes without explicit user approval.
 
+### 5.4 Automated EC2 Bootstrap Script (`deploy/ec2-bootstrap.sh`)
+When launching new EC2 instances (via AWS Console, Launch Template, or Auto Scaling Group), supply [`deploy/ec2-bootstrap.sh`](file:///Users/soham18/Desktop/orbito-v2/deploy/ec2-bootstrap.sh) in the **User data** field:
+- **System Preparation:** Automatically provisions a 2GB swapfile, installs Docker Engine + Compose plugin, configures Docker log rotation (50MB cap), and adds `ubuntu` / `ec2-user` to the `docker` group.
+- **Security & Port Guardrails:** Automatically configures UFW firewall rules to allow ports `22` (SSH), `80` (HTTP), `443` (HTTPS), and `4173`, while explicitly blocking external access to internal database (`5432`) and backend (`9000`) ports.
+- **Health Utility:** Installs `/usr/local/bin/orbito-healthcheck` for fast terminal inspection of Docker daemon status, container health, HTTP 200 checks (`/auth/v1/api/health`), and disk/memory utilization.
+- **Execution Log:** Inspect bootstrap progress in real-time or post-launch at `/var/log/orbito-bootstrap.log`.
+
 ---
 
 ## 6. Operational Runbooks
