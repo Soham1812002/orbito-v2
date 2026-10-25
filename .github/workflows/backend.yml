@@ -3,7 +3,7 @@ name: Backend CI/CD
 on:
   push:
     branches:
-      - development
+      - main
     paths:
       - "backend/**"
       - "docker-compose.yml"
@@ -78,11 +78,17 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd ~/orbito
+            if [ -d "$HOME/orbito/orbito-v2" ]; then
+              cd "$HOME/orbito/orbito-v2"
+            else
+              cd ~/orbito
+            fi
 
-            git fetch origin development
-            git checkout development
-            git reset --hard origin/development
+            if [ -d ".git" ]; then
+              git fetch origin main || true
+              git checkout main || true
+              git reset --hard origin/main || true
+            fi
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             docker compose pull backend
@@ -104,11 +110,17 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd ~/orbito
+            if [ -d "$HOME/orbito/orbito-v2" ]; then
+              cd "$HOME/orbito/orbito-v2"
+            else
+              cd ~/orbito
+            fi
 
-            git fetch origin development
-            git checkout development
-            git reset --hard origin/development
+            if [ -d ".git" ]; then
+              git fetch origin main || true
+              git checkout main || true
+              git reset --hard origin/main || true
+            fi
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             docker compose pull backend

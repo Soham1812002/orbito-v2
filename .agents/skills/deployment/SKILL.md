@@ -87,9 +87,9 @@ The `.github/workflows/` directory contains 5 automated workflows:
 
 | Workflow | File | Trigger | Purpose |
 |---|---|---|---|
-| **PR Checks** | `pr-checks.yml` | Pull request to `development` | Validates TypeScript typecheck and compilation for both backend and frontend. |
-| **Backend CI/CD** | `backend.yml` | Push to `development` (`backend/**`, `docker-compose.yml`) | Builds & pushes Docker Hub image, runs migrations via SSH on EC2, and replaces backend container (`--no-deps`). |
-| **Frontend CI/CD** | `frontend.yml` | Push to `development` (`frontend/**`, `docker-compose.yml`) | Builds & pushes Docker Hub image with Vite build-args, replaces frontend container on EC2 (`--no-deps`). |
+| **PR Checks** | `pr-checks.yml` | Pull request to `main` | Validates TypeScript typecheck and compilation for both backend and frontend. |
+| **Backend CI/CD** | `backend.yml` | Push to `main` (`backend/**`, `docker-compose.yml`) | Builds & pushes Docker Hub image, runs migrations via SSH on EC2, and replaces backend container (`--no-deps`). |
+| **Frontend CI/CD** | `frontend.yml` | Push to `main` (`frontend/**`, `docker-compose.yml`) | Builds & pushes Docker Hub image with Vite build-args, replaces frontend container on EC2 (`--no-deps`). |
 | **Database Migrations** | `migrations.yml` | `workflow_dispatch` (manual) | Runs `npm run migrate` or `npm run migrate:check` on EC2 against target environment. |
 | **EC2 Docker Cleanup** | `cleanup.yml` | Automatically after CI/CD success or `workflow_dispatch` | Executes `docker system prune -af` on EC2 to keep disk usage lean. |
 

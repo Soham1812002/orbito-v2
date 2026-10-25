@@ -42,11 +42,17 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd ~/orbito
+            if [ -d "$HOME/orbito/orbito-v2" ]; then
+              cd "$HOME/orbito/orbito-v2"
+            else
+              cd ~/orbito
+            fi
 
-            git fetch origin development
-            git checkout development
-            git reset --hard origin/development
+            if [ -d ".git" ]; then
+              git fetch origin main || true
+              git checkout main || true
+              git reset --hard origin/main || true
+            fi
 
             run_for_service() {
               local svc=$1
