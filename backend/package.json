@@ -8,10 +8,12 @@
     "prestart": "npm run build",
     "start": "node dist/server.js",
     "build:start": "npm run build && node dist/server.js",
-    "migrate": "tsx src/migrations/runner.ts run",
-    "migrate:check": "tsx src/migrations/runner.ts check",
-    "migrate:rollback": "tsx src/migrations/runner.ts rollback",
-    "seed": "tsx src/migrations/seed.ts"
+    "migrate": "node dist/migrations/runner.js run",
+    "migrate:check": "node dist/migrations/runner.js check",
+    "migrate:rollback": "node dist/migrations/runner.js rollback",
+    "migrate:ts": "tsx src/migrations/runner.ts run",
+    "seed": "node dist/migrations/seed.js",
+    "seed:ts": "tsx src/migrations/seed.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

@@ -420,7 +420,7 @@ export async function runSeeds(): Promise<void> {
   }
 }
 
-if (process.argv[1]?.includes("seed.ts")) {
+if (process.argv[1]?.includes("seed")) {
   (async () => {
     try {
       await sequelize.authenticate();

@@ -33,13 +33,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create uploads directory (mounted as a named volume in production)
-RUN mkdir -p /app/uploads
+# Create uploads and logs directories, and give ownership to the non-root "node" user
+RUN mkdir -p /app/uploads /app/logs && chown -R node:node /app
 
-# Copy only what is needed at runtime
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY package.json ./
+# Copy runtime files with node user ownership
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/dist ./dist
+COPY --chown=node:node package.json ./
 
 # Run as the built-in non-root "node" user
 USER node

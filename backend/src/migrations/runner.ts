@@ -140,7 +140,7 @@ export async function rollbackMigration(): Promise<void> {
 }
 
 // CLI runner handler
-if (process.argv[1]?.includes("runner.ts")) {
+if (process.argv[1]?.includes("runner")) {
   const action = process.argv[2] || "run";
   (async () => {
     try {
