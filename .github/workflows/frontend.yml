@@ -58,7 +58,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ steps.meta.outputs.sha_tag }}
           build-args: |
-            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL || '/auth/v1/api' }}
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL || '/v1/api' }}
             VITE_API_GXP_BASE_URL=${{ secrets.VITE_API_GXP_BASE_URL || '/gxp/v1/api' }}
             VITE_API_LIMS_BASE_URL=${{ secrets.VITE_API_LIMS_BASE_URL || '/lims/v1/api' }}
           cache-from: type=gha

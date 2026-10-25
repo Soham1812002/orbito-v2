@@ -13,7 +13,7 @@ COPY public/ ./public/
 COPY src/ ./src/
 
 # Build-time ARGs — baked into the SPA bundle by Vite
-ARG VITE_API_BASE_URL=/auth/v1/api
+ARG VITE_API_BASE_URL=/v1/api
 ARG VITE_API_GXP_BASE_URL=/gxp/v1/api
 ARG VITE_API_LIMS_BASE_URL=/lims/v1/api
 

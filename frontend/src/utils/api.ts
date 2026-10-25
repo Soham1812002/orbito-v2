@@ -1,7 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { showToast } from "@/lib/toast";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/v1/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "/v1/api";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

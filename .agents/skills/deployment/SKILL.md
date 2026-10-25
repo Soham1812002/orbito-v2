@@ -112,7 +112,7 @@ Configure the following secrets in GitHub Repository Settings -> Secrets and var
 - `EC2_HOST`: Public IP or DNS of the EC2 instance.
 - `EC2_USERNAME`: SSH username (e.g. `ubuntu` or `ec2-user`).
 - `EC2_SSH_KEY`: Private SSH key matching the instance's authorized keys.
-- `VITE_API_BASE_URL`: Optional frontend build-arg override (defaults to `/auth/v1/api`).
+- `VITE_API_BASE_URL`: Optional frontend build-arg override (defaults to `/v1/api`).
 
 ### 5.3 Secret Guardrails
 - **Zero `.env` In Git:** `.env*` files are strictly excluded via `.gitignore`.
