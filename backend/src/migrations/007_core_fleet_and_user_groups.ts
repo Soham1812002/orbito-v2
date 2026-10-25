@@ -2,6 +2,21 @@ import { QueryInterface, DataTypes, Transaction } from "sequelize";
 
 export const name = "007_core_fleet_and_user_groups";
 
+const USER_ENTERPRISE_COLUMNS = [
+  { name: "phone", type: DataTypes.STRING(30), defaultValue: "+91 98201 12345" },
+  { name: "company", type: DataTypes.STRING(120), defaultValue: "InOrbit Fleet Logistics" },
+  { name: "branch", type: DataTypes.STRING(120), defaultValue: "Mumbai Central Hub" },
+  { name: "reseller", type: DataTypes.STRING(120), defaultValue: "Direct Enterprise" },
+  { name: "group_id", type: DataTypes.UUID, references: { model: "user_groups", key: "id" }, onDelete: "SET NULL" },
+  { name: "allocation_group", type: DataTypes.STRING(120), defaultValue: "All India Logistics" },
+  { name: "expiry_date", type: DataTypes.STRING(30), defaultValue: "2028-12-31" },
+  { name: "language", type: DataTypes.STRING(10), defaultValue: "en" },
+  { name: "timezone", type: DataTypes.STRING(50), defaultValue: "Asia/Kolkata" },
+  { name: "date_format", type: DataTypes.STRING(20), defaultValue: "DD/MM/YYYY" },
+  { name: "measurement_unit", type: DataTypes.STRING(10), defaultValue: "km" },
+  { name: "features", type: DataTypes.JSONB, defaultValue: '{"liveTracking":true,"dashboardCharts":true,"routePlayback":true,"emailAlerts":true}' }
+];
+
 export async function up(queryInterface: QueryInterface, transaction: Transaction): Promise<void> {
   // 1. Drivers Table
   await queryInterface.createTable(
@@ -266,22 +281,7 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
   );
 
   // 4. Alter users table with enterprise profile columns
-  const userColumns = [
-    { name: "phone", type: DataTypes.STRING(30), defaultValue: "+91 98201 12345" },
-    { name: "company", type: DataTypes.STRING(120), defaultValue: "InOrbit Fleet Logistics" },
-    { name: "branch", type: DataTypes.STRING(120), defaultValue: "Mumbai Central Hub" },
-    { name: "reseller", type: DataTypes.STRING(120), defaultValue: "Direct Enterprise" },
-    { name: "group_id", type: DataTypes.UUID, references: { model: "user_groups", key: "id" }, onDelete: "SET NULL" },
-    { name: "allocation_group", type: DataTypes.STRING(120), defaultValue: "All India Logistics" },
-    { name: "expiry_date", type: DataTypes.STRING(30), defaultValue: "2028-12-31" },
-    { name: "language", type: DataTypes.STRING(10), defaultValue: "en" },
-    { name: "timezone", type: DataTypes.STRING(50), defaultValue: "Asia/Kolkata" },
-    { name: "date_format", type: DataTypes.STRING(20), defaultValue: "DD/MM/YYYY" },
-    { name: "measurement_unit", type: DataTypes.STRING(10), defaultValue: "km" },
-    { name: "features", type: DataTypes.JSONB, defaultValue: '{"liveTracking":true,"dashboardCharts":true,"routePlayback":true,"emailAlerts":true}' }
-  ];
-
-  for (const col of userColumns) {
+  for (const col of USER_ENTERPRISE_COLUMNS) {
     try {
       await queryInterface.addColumn(
         "users",
@@ -304,5 +304,14 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
 export async function down(queryInterface: QueryInterface, transaction: Transaction): Promise<void> {
   await queryInterface.dropTable("vehicles", { transaction });
   await queryInterface.dropTable("drivers", { transaction });
+
+  for (const col of USER_ENTERPRISE_COLUMNS) {
+    try {
+      await queryInterface.removeColumn("users", col.name, { transaction });
+    } catch {
+      // Column may have already been removed
+    }
+  }
+
   await queryInterface.dropTable("user_groups", { transaction });
 }

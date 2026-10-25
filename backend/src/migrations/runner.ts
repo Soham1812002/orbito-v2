@@ -102,6 +102,43 @@ export async function runMigrations(): Promise<void> {
   logger.info("All migrations completed successfully.");
 }
 
+export async function rollbackMigration(): Promise<void> {
+  await ensureMetaTable();
+  const applied = await getAppliedMigrations();
+  if (applied.length === 0) {
+    logger.info("No migrations to rollback.");
+    return;
+  }
+  const lastAppliedName = applied[applied.length - 1];
+  const migration = AVAILABLE_MIGRATIONS.find((m) => m.name === lastAppliedName);
+  if (!migration) {
+    logger.error(`Migration definition for ${lastAppliedName} not found!`);
+    throw new Error(`Migration ${lastAppliedName} not found in available migrations`);
+  }
+  if (!migration.down) {
+    logger.warn(`Migration ${lastAppliedName} does not define a down() rollback handler.`);
+    return;
+  }
+
+  logger.info(`Rolling back migration: ${migration.name}...`);
+  const queryInterface = sequelize.getQueryInterface();
+  const transaction = await sequelize.transaction();
+  try {
+    await migration.down(queryInterface, transaction);
+    await sequelize.query("DELETE FROM sequelize_meta WHERE name = :name", {
+      replacements: { name: migration.name },
+      type: QueryTypes.DELETE,
+      transaction
+    });
+    await transaction.commit();
+    logger.info(`Migration ${migration.name} successfully rolled back.`);
+  } catch (error) {
+    await transaction.rollback();
+    logger.error(`Rollback of ${migration.name} failed! Rolled back transaction.`, error);
+    throw error;
+  }
+}
+
 // CLI runner handler
 if (process.argv[1]?.includes("runner.ts")) {
   const action = process.argv[2] || "run";
@@ -117,6 +154,9 @@ if (process.argv[1]?.includes("runner.ts")) {
           logger.info("Database migration check passed: 0 pending migrations.");
           process.exit(0);
         }
+      } else if (action === "rollback" || action === "down") {
+        await rollbackMigration();
+        process.exit(0);
       } else {
         await runMigrations();
         process.exit(0);

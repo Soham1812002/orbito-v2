@@ -1,0 +1,31 @@
+name: EC2 Docker Cleanup
+
+on:
+  workflow_run:
+    workflows:
+      - "Backend CI/CD"
+      - "Frontend CI/CD"
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Prune Docker Resources on EC2
+    runs-on: ubuntu-latest
+    # Only run cleanup after a successful deployment (not on failure)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: SSH into EC2 and prune Docker
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            echo "==> Pruning dangling images and stopped containers..."
+            docker system prune -af
+            echo "==> Disk usage after cleanup:"
+            df -h /

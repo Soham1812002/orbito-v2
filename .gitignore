@@ -13,6 +13,8 @@ out
 .env.local
 .env.*.local
 !.env.example
+!backend/.env.example
+!.env.example
 
 # Logs & Test Artifacts
 *.log

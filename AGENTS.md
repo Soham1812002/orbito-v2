@@ -46,6 +46,8 @@ Orbito v2 has dedicated skills in the [`.agents/skills/`](file:///Users/soham18/
 | **Overengineering Review** | [overengineering-review/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/overengineering-review/SKILL.md) | Review code, plans, or diffs for needless complexity, replaceable dependencies, dead flexibility, and native/stdlib replacements. |
 | **Plan Executor** | [plan-executor/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/plan-executor/SKILL.md) | Central orchestration loop: routes backend tasks to `backend-pattern-executor` and frontend tasks to `ui-layout-executor`, verifies each step against plan & goal, and loops until 100% complete. |
 | **Playwright QA** | [playwright-qa/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/playwright-qa/SKILL.md) | Autonomous browser testing via Playwright MCP: scenario matrix execution, evidence screenshots, console/network audits, and UI/UX reports. |
+| **Deployment** | [deployment/SKILL.md](file:///Users/soham18/Desktop/orbito-v2/.agents/skills/deployment/SKILL.md) | Docker multi-stage images, Docker Compose production stack, GitHub Actions CI/CD workflows, zero-downtime EC2 deployments, zero-drift migrations, and Nginx two-layer rate limiting. |
+
 
 ---
 

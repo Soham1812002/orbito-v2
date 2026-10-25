@@ -268,3 +268,32 @@ Orbito v2 engineering follows a strict 6-step lifecycle orchestrated by speciali
 ### Curated Skill Synchronization Standard
 - **When to update skills:** Proactively update matching `.agents/skills/` documents and `AGENTS.md` whenever introducing or modifying durable architectural conventions, new database tables/models, shared UI components (`@/components/common`), or module patterns.
 - **What NOT to update:** Do NOT treat skills as git commit changelogs or task logs. Never add one-off bug fix summaries or temporary debugging instructions. ONLY record durable, repeatable standards that prevent future engineering inconsistency.
+
+---
+
+## 10. Infrastructure, Containerization & Synchronized Edge Defense
+
+### 10.1 Production Container Topology
+Orbito v2 runs on a streamlined multi-container Docker Compose stack on EC2:
+- **`postgres` (`postgres:16-alpine`):** PostgreSQL database engine with healthchecks (`pg_isready`), persistent storage mapped to `orbito_pgdata` named volume.
+- **`backend` (`node:20-alpine` multi-stage):** Express 5 REST API running on internal port `9000`, uploads directory mapped to persistent `backend_uploads` volume, depends on healthy `postgres`.
+- **`frontend` (`nginx:alpine-slim` multi-stage):** Serves the pre-compiled Vite SPA and acts as the public reverse proxy on ports `80` and `4173`, routing API calls and uploads to the `backend` container.
+
+### 10.2 Reverse Proxy & Route Segregation
+Nginx terminates client HTTP traffic and handles traffic segregation:
+- `/` & `/assets/*`: Serves the React SPA static assets (`Cache-Control: public, immutable` for hashed assets, `no-cache` for HTML fallback).
+- `/auth/v1/api/*`: Proxies to `http://backend_api/v1/api/` with forwarded headers (`X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`).
+- `/auth/uploads/*`: Proxies static and uploaded media assets to `http://backend_api/uploads/` with extended proxy timeouts (`300s`).
+
+### 10.3 Synchronized Two-Layer Rate Limiting
+To protect application availability without compromising user experience or error fidelity:
+1. **Layer 1 — Nginx Network Edge (Early Drops):**
+   - `api_limit`: General flood mitigation (`20 req/s`, burst `40`, `nodelay`) returning immediate HTTP 429. Protects Node.js event loops from CPU exhaustion during volumetric floods.
+   - `auth_limit`: Strict brute-force protection (`5 req/min`, burst `3`, `nodelay`) applied explicitly to `location = /auth/v1/api/auth/login`.
+2. **Layer 2 — Express Application Backstop (`express-rate-limit`):**
+   - Scoped specifically to `/v1/api/auth/login` (`100 req / 15 min window`, equivalent to `~6.7 req/min`).
+   - Acts as the semantic application layer returning structured JSON error bodies (`error: "Too many login attempts..."`) and standard `RateLimit-*` headers consumed by the frontend client.
+3. **Synchronization Rationale:**
+   - Layer 1 operates at the kernel/socket edge before requests ever touch Node.js memory.
+   - Layer 2 provides user-friendly API responses and client throttling feedback when requests slip through or originate from legitimate clients under slower sustained bursts.
+

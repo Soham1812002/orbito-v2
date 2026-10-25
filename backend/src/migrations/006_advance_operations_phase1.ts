@@ -86,11 +86,13 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
       },
       created_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       updated_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       deleted_at: {
         type: DataTypes.DATE,
@@ -181,11 +183,13 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
       },
       created_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       updated_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       deleted_at: {
         type: DataTypes.DATE,
@@ -284,11 +288,13 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
       },
       created_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       updated_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       deleted_at: {
         type: DataTypes.DATE,
@@ -377,11 +383,13 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
       },
       created_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       updated_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       deleted_at: {
         type: DataTypes.DATE,
@@ -475,11 +483,13 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
       },
       created_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       updated_at: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       deleted_at: {
         type: DataTypes.DATE,

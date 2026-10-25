@@ -10,6 +10,7 @@
     "build:start": "npm run build && node dist/server.js",
     "migrate": "tsx src/migrations/runner.ts run",
     "migrate:check": "tsx src/migrations/runner.ts check",
+    "migrate:rollback": "tsx src/migrations/runner.ts rollback",
     "seed": "tsx src/migrations/seed.ts"
   },
   "dependencies": {

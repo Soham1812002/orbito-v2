@@ -1,0 +1,24 @@
+name: orbito-app-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: orbito_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_password
+      POSTGRES_DB: orbito_auth
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d orbito_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata_dev:

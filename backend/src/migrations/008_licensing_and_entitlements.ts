@@ -523,6 +523,18 @@ export async function up(queryInterface: QueryInterface, transaction: Transactio
     },
     { transaction }
   );
+
+  await queryInterface.addIndex("company_licenses", ["company"], { transaction });
+  await queryInterface.addIndex("company_licenses", ["deleted_at"], { transaction });
+
+  await queryInterface.addIndex("reseller_licenses", ["reseller"], { transaction });
+  await queryInterface.addIndex("reseller_licenses", ["deleted_at"], { transaction });
+
+  await queryInterface.addIndex("vehicle_licenses", ["company"], { transaction });
+  await queryInterface.addIndex("vehicle_licenses", ["deleted_at"], { transaction });
+
+  await queryInterface.addIndex("user_licenses", ["company"], { transaction });
+  await queryInterface.addIndex("user_licenses", ["deleted_at"], { transaction });
 }
 
 export async function down(queryInterface: QueryInterface, transaction: Transaction): Promise<void> {

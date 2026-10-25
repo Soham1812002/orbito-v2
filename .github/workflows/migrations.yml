@@ -1,0 +1,77 @@
+name: Database Migrations Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to target"
+        required: true
+        type: choice
+        options:
+          - all
+          - backend
+        default: all
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - migrate
+          - check
+        default: migrate
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - prod
+          - dev
+        default: prod
+
+jobs:
+  migrations:
+    name: "[${{ inputs.environment }}] ${{ inputs.action }} — ${{ inputs.service }}"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH into EC2 and run migrations
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/orbito
+
+            git fetch origin development
+            git checkout development
+            git reset --hard origin/development
+
+            run_for_service() {
+              local svc=$1
+              local running
+
+              running=$(docker compose ps -q "$svc" 2>/dev/null || true)
+              if [ -z "$running" ]; then
+                echo "==> Starting $svc container..."
+                docker compose up -d "$svc"
+                sleep 5
+              fi
+
+              if [ "${{ inputs.action }}" = "check" ]; then
+                echo "==> Checking migration state for $svc..."
+                docker compose exec "$svc" npm run migrate:check
+              else
+                echo "==> Running migrations for $svc..."
+                docker compose exec "$svc" npm run migrate
+                echo "==> Verifying migration sync for $svc..."
+                docker compose exec "$svc" npm run migrate:check
+              fi
+            }
+
+            if [ "${{ inputs.service }}" = "all" ]; then
+              run_for_service "backend"
+            else
+              run_for_service "${{ inputs.service }}"
+            fi
