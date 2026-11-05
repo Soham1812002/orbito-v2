@@ -71,7 +71,7 @@ export const IdleSummaryOverviewPage: React.FC = () => {
         field: "totalIdleEvents",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="px-2.5 py-0.5 rounded-full font-mono text-2xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+          <span className="px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
             {params.value} Events
           </span>
         )
@@ -81,7 +81,7 @@ export const IdleSummaryOverviewPage: React.FC = () => {
         field: "totalIdleTime",
         minWidth: 120,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-amber-600 dark:text-amber-400">
+          <span className="font-mono font-bold text-[11px] text-amber-600 dark:text-amber-400">
             {params.value}
           </span>
         )
@@ -91,7 +91,7 @@ export const IdleSummaryOverviewPage: React.FC = () => {
         field: "longestIdle",
         minWidth: 120,
         cellRenderer: (params: any) => (
-          <span className="font-mono text-2xs text-slate-600 dark:text-slate-300">
+          <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
             {params.value}
           </span>
         )
@@ -101,7 +101,7 @@ export const IdleSummaryOverviewPage: React.FC = () => {
         field: "fuelWastedLitres",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-semibold text-2xs text-rose-600 dark:text-rose-400">
+          <span className="font-mono font-semibold text-[11px] text-rose-600 dark:text-rose-400">
             {params.value} L
           </span>
         )
@@ -115,7 +115,7 @@ export const IdleSummaryOverviewPage: React.FC = () => {
         cellRenderer: (params: any) => (
           <Link
             to={`/reports/idle-summary/${encodeURIComponent(params.value)}`}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white font-semibold text-2xs transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white font-semibold text-[11px] transition-colors"
           >
             <span>Idle Events</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -157,7 +157,7 @@ export const IdleSummaryOverviewPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<IdleOverviewRow>
           rowData={rows}
           columnDefs={columns}

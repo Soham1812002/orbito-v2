@@ -71,7 +71,7 @@ export const DigitalPortEventViewPage: React.FC = () => {
         field: "onDuration",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-semibold text-2xs text-emerald-600 dark:text-emerald-400">
+          <span className="font-mono font-semibold text-[11px] text-emerald-600 dark:text-emerald-400">
             {params.value}
           </span>
         )
@@ -81,7 +81,7 @@ export const DigitalPortEventViewPage: React.FC = () => {
         field: "timesOn",
         minWidth: 110,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-700 dark:text-slate-300">
+          <span className="font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300">
             {params.value}
           </span>
         )
@@ -91,7 +91,7 @@ export const DigitalPortEventViewPage: React.FC = () => {
         field: "offDuration",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-semibold text-2xs text-slate-600 dark:text-slate-400">
+          <span className="font-mono font-semibold text-[11px] text-slate-600 dark:text-slate-400">
             {params.value}
           </span>
         )
@@ -101,7 +101,7 @@ export const DigitalPortEventViewPage: React.FC = () => {
         field: "timesOff",
         minWidth: 110,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-700 dark:text-slate-300">
+          <span className="font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300">
             {params.value}
           </span>
         )
@@ -159,7 +159,7 @@ export const DigitalPortEventViewPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<DigitalPortEvent>
           rowData={events}
           columnDefs={columns}

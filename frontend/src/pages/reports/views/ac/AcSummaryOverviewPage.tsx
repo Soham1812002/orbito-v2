@@ -41,13 +41,8 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "vehicleNo",
         minWidth: 170,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-              {params.value}
-            </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {params.data?.vehicleName} · {params.data?.model}
-            </div>
+          <div className="flex items-center h-full font-bold text-slate-900 dark:text-white font-mono text-xs">
+            {params.value}
           </div>
         )
       },
@@ -56,9 +51,9 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "branch",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="text-slate-700 dark:text-slate-300 font-medium">
+          <div className="flex items-center h-full text-slate-700 dark:text-slate-300 font-medium">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -66,9 +61,9 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "driverName",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <span className="font-semibold text-slate-800 dark:text-slate-200">
+          <div className="flex items-center h-full font-semibold text-slate-800 dark:text-slate-200">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -76,10 +71,10 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "acOnDistanceKm",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-900 dark:text-white">
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-slate-900 dark:text-white">
             {params.value?.toLocaleString()}{" "}
-            <span className="text-[10px] text-slate-400 font-normal">km</span>
-          </span>
+            <span className="text-[10px] text-slate-400 font-normal ml-0.5">km</span>
+          </div>
         )
       },
       {
@@ -87,9 +82,9 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "acOnDuration",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-cyan-600 dark:text-cyan-400">
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-cyan-600 dark:text-cyan-400">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -97,9 +92,9 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "acOffDuration",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono text-2xs text-slate-500">
+          <div className="flex items-center h-full font-mono text-[11px] text-slate-500">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -107,9 +102,9 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "acCycles",
         minWidth: 100,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-700 dark:text-slate-300">
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -117,15 +112,17 @@ export const AcSummaryOverviewPage: React.FC = () => {
         field: "currentStatus",
         minWidth: 120,
         cellRenderer: (params: any) => (
-          <span
-            className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
-              params.value === "AC ON"
-                ? "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60 font-mono"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700 font-mono"
-            }`}
-          >
-            {params.value}
-          </span>
+          <div className="flex items-center h-full">
+            <span
+              className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border font-mono ${
+                params.value === "AC ON"
+                  ? "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+              }`}
+            >
+              {params.value}
+            </span>
+          </div>
         )
       },
       {
@@ -135,13 +132,15 @@ export const AcSummaryOverviewPage: React.FC = () => {
         sortable: false,
         filter: false,
         cellRenderer: (params: any) => (
-          <Link
-            to={`/reports/ac-summary/${encodeURIComponent(params.value)}`}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-600 hover:text-white font-semibold text-2xs transition-colors"
-          >
-            <span>AC Events</span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="flex items-center h-full">
+            <Link
+              to={`/reports/ac-summary/${encodeURIComponent(params.value)}`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-600 hover:text-white font-semibold text-[11px] transition-colors"
+            >
+              <span>AC Events</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         )
       }
     ],
@@ -179,7 +178,7 @@ export const AcSummaryOverviewPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<AcSummaryOverviewRow>
           rowData={rows}
           columnDefs={columns}

@@ -21,8 +21,8 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
       { key: "status", label: "Account Status" }
     ],
     fields: [
-      { key: "name", label: "Company Legal Name", type: "text", required: true, placeholder: "e.g. Apex Logistics India Pvt Ltd" },
-      { key: "code", label: "Company Short Code", type: "text", required: true, placeholder: "e.g. CORP-01" },
+      { key: "name", label: "Company Legal Name", type: "text", required: true, placeholder: "e.g. Apex Logistics India Pvt Ltd", maxLength: 100 },
+      { key: "code", label: "Company Short Code", type: "text", required: true, placeholder: "e.g. CORP-01", maxLength: 20 },
       {
         key: "industry",
         label: "Industry Domain",
@@ -36,10 +36,10 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Mining & Heavy Haulage", value: "Mining & Heavy Haulage" }
         ]
       },
-      { key: "contactPerson", label: "Primary Contact Person", type: "text", required: true, placeholder: "e.g. Rajesh Varma" },
-      { key: "email", label: "Official Contact Email", type: "text", required: true, placeholder: "ops@company.in" },
-      { key: "phone", label: "Contact Phone Number", type: "text", required: true, placeholder: "+91 98200 12345" },
-      { key: "city", label: "Registered City", type: "text", required: true, placeholder: "Mumbai" },
+      { key: "contactPerson", label: "Primary Contact Person", type: "text", required: true, placeholder: "e.g. Rajesh Varma", maxLength: 80 },
+      { key: "email", label: "Official Contact Email", type: "text", required: true, placeholder: "ops@company.in", maxLength: 100, validate: "email" },
+      { key: "phone", label: "Contact Phone Number", type: "text", required: true, placeholder: "+91 98200 12345", maxLength: 15, validate: "phone" },
+      { key: "city", label: "Registered City", type: "text", required: true, placeholder: "Mumbai", maxLength: 60 },
       {
         key: "state",
         label: "State / Territory",
@@ -55,8 +55,8 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "West Bengal", value: "West Bengal" }
         ]
       },
-      { key: "address", label: "Operating / Registered Address", type: "textarea", placeholder: "Plot number, Industrial Area..." },
-      { key: "pincode", label: "Postal PIN Code", type: "text", placeholder: "400707" },
+      { key: "address", label: "Operating / Registered Address", type: "textarea", placeholder: "Plot number, Industrial Area...", maxLength: 300 },
+      { key: "pincode", label: "Postal PIN Code", type: "text", placeholder: "400707", maxLength: 6, minLength: 6, validate: "pincode" },
       { key: "maxVehicles", label: "Allocated Fleet Capacity", type: "number", required: true, placeholder: "250" },
       {
         key: "status",
@@ -101,14 +101,14 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Metro Intercity Transit Lines", value: "Metro Intercity Transit Lines" }
         ]
       },
-      { key: "name", label: "Branch Name", type: "text", required: true, placeholder: "e.g. Mumbai Port Cargo Terminal" },
-      { key: "code", label: "Branch Code", type: "text", required: true, placeholder: "e.g. BOM-01" },
-      { key: "managerName", label: "Branch Manager", type: "text", required: true, placeholder: "e.g. Suresh Nair" },
-      { key: "phone", label: "Terminal Phone", type: "text", required: true, placeholder: "+91 98201 11223" },
-      { key: "email", label: "Branch Email", type: "text", placeholder: "bom01@apexlogistics.in" },
-      { key: "city", label: "City", type: "text", required: true, placeholder: "Mumbai" },
-      { key: "state", label: "State", type: "text", required: true, placeholder: "Maharashtra" },
-      { key: "landmarkGeofence", label: "Base Landmark / Geofence Name", type: "text", placeholder: "JNPT Container Gate 4" },
+      { key: "name", label: "Branch Name", type: "text", required: true, placeholder: "e.g. Mumbai Port Cargo Terminal", maxLength: 100 },
+      { key: "code", label: "Branch Code", type: "text", required: true, placeholder: "e.g. BOM-01", maxLength: 20 },
+      { key: "managerName", label: "Branch Manager", type: "text", required: true, placeholder: "e.g. Suresh Nair", maxLength: 80 },
+      { key: "phone", label: "Terminal Phone", type: "text", required: true, placeholder: "+91 98201 11223", maxLength: 15, validate: "phone" },
+      { key: "email", label: "Branch Email", type: "text", placeholder: "bom01@apexlogistics.in", maxLength: 100, validate: "email" },
+      { key: "city", label: "City", type: "text", required: true, placeholder: "Mumbai", maxLength: 60 },
+      { key: "state", label: "State", type: "text", required: true, placeholder: "Maharashtra", maxLength: 60 },
+      { key: "landmarkGeofence", label: "Base Landmark / Geofence Name", type: "text", placeholder: "JNPT Container Gate 4", maxLength: 100 },
       {
         key: "status",
         label: "Status",
@@ -165,7 +165,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Bengaluru Express Hub", value: "Bengaluru Express Hub" }
         ]
       },
-      { key: "plateNumber", label: "Registration Plate Number", type: "text", required: true, placeholder: "e.g. MH-04-AZ-8821" },
+      { key: "plateNumber", label: "Registration Plate Number", type: "text", required: true, placeholder: "e.g. MH-04-AZ-8821", maxLength: 15 },
       {
         key: "vehicleType",
         label: "Vehicle Type / Classification",
@@ -179,12 +179,12 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Bus", value: "Bus" }
         ]
       },
-      { key: "makeModel", label: "Make & Model", type: "text", required: true, placeholder: "e.g. Tata Signa 4825.T" },
-      { key: "chassisNumber", label: "Chassis / VIN Number", type: "text", placeholder: "MAT712039N1A20194" },
-      { key: "engineNumber", label: "Engine Serial Number", type: "text", placeholder: "ENG-CUM-20491" },
+      { key: "makeModel", label: "Make & Model", type: "text", required: true, placeholder: "e.g. Tata Signa 4825.T", maxLength: 80 },
+      { key: "chassisNumber", label: "Chassis / VIN Number", type: "text", placeholder: "MAT712039N1A20194", maxLength: 20 },
+      { key: "engineNumber", label: "Engine Serial Number", type: "text", placeholder: "ENG-CUM-20491", maxLength: 30 },
       { key: "odometer", label: "Current Odometer (km)", type: "number", required: true, placeholder: "142500" },
       { key: "fuelCapacity", label: "Fuel Tank Capacity (Liters)", type: "number", required: true, placeholder: "400" },
-      { key: "assignedDriver", label: "Assigned Primary Driver", type: "text", placeholder: "e.g. Ramesh Yadav" },
+      { key: "assignedDriver", label: "Assigned Primary Driver", type: "text", placeholder: "e.g. Ramesh Yadav", maxLength: 80 },
       {
         key: "status",
         label: "Status",
@@ -242,9 +242,9 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Bengaluru Express Hub", value: "Bengaluru Express Hub" }
         ]
       },
-      { key: "employeeCode", label: "Employee ID", type: "text", required: true, placeholder: "e.g. EMP-DRV-101" },
-      { key: "firstName", label: "First Name", type: "text", required: true, placeholder: "Ramesh" },
-      { key: "lastName", label: "Last Name", type: "text", required: true, placeholder: "Yadav" },
+      { key: "employeeCode", label: "Employee ID", type: "text", required: true, placeholder: "e.g. EMP-DRV-101", maxLength: 20 },
+      { key: "firstName", label: "First Name", type: "text", required: true, placeholder: "Ramesh", maxLength: 50 },
+      { key: "lastName", label: "Last Name", type: "text", required: true, placeholder: "Yadav", maxLength: 50 },
       {
         key: "designation",
         label: "Designation / Role",
@@ -257,10 +257,10 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Route Controller", value: "Route Controller" }
         ]
       },
-      { key: "phone", label: "Mobile Contact", type: "text", required: true, placeholder: "+91 98200 44556" },
-      { key: "email", label: "Email Address", type: "text", placeholder: "driver@apexlogistics.in" },
-      { key: "licenseNumber", label: "Driving License Number", type: "text", placeholder: "MH-0420150029104" },
-      { key: "licenseExpiry", label: "License Expiry Date", type: "text", placeholder: "2029-08-15" },
+      { key: "phone", label: "Mobile Contact", type: "text", required: true, placeholder: "+91 98200 44556", maxLength: 15, validate: "phone" },
+      { key: "email", label: "Email Address", type: "text", placeholder: "driver@apexlogistics.in", maxLength: 100, validate: "email" },
+      { key: "licenseNumber", label: "Driving License Number", type: "text", placeholder: "MH-0420150029104", maxLength: 20 },
+      { key: "licenseExpiry", label: "License Expiry Date", type: "text", placeholder: "2029-08-15", maxLength: 10, validate: "date" },
       {
         key: "status",
         label: "Duty Status",
@@ -304,9 +304,9 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "BSNL IoT", value: "BSNL IoT" }
         ]
       },
-      { key: "iccid", label: "ICCID Number (20 Digits)", type: "text", required: true, placeholder: "89914902194820194812" },
-      { key: "msisdn", label: "SIM Phone Number (MSISDN)", type: "text", required: true, placeholder: "+91 98200 90101" },
-      { key: "apn", label: "Access Point Name (APN)", type: "text", required: true, placeholder: "airtelgprs.com" },
+      { key: "iccid", label: "ICCID Number (20 Digits)", type: "text", required: true, placeholder: "89914902194820194812", maxLength: 20, minLength: 19, validate: "iccid" },
+      { key: "msisdn", label: "SIM Phone Number (MSISDN)", type: "text", required: true, placeholder: "+91 98200 90101", maxLength: 15, validate: "phone" },
+      { key: "apn", label: "Access Point Name (APN)", type: "text", required: true, placeholder: "airtelgprs.com", maxLength: 100 },
       {
         key: "dataPlan",
         label: "Data Quota Plan",
@@ -319,7 +319,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Unlimited Pooled", value: "Unlimited Pooled" }
         ]
       },
-      { key: "planExpiry", label: "Plan Expiry Date", type: "text", placeholder: "2027-12-31" },
+      { key: "planExpiry", label: "Plan Expiry Date", type: "text", placeholder: "2027-12-31", maxLength: 10, validate: "date" },
       {
         key: "status",
         label: "Status",
@@ -351,7 +351,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
       { key: "status", label: "Device State" }
     ],
     fields: [
-      { key: "imei", label: "Hardware IMEI (15 Digits)", type: "text", required: true, placeholder: "864201948201948" },
+      { key: "imei", label: "Hardware IMEI (15 Digits)", type: "text", required: true, placeholder: "864201948201948", maxLength: 15, minLength: 15, validate: "imei" },
       {
         key: "modelName",
         label: "Device Model",
@@ -365,7 +365,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Meitrack T333", value: "Meitrack T333" }
         ]
       },
-      { key: "serialNumber", label: "Manufacturer Serial Number", type: "text", placeholder: "TT-FMB-920-8841" },
+      { key: "serialNumber", label: "Manufacturer Serial Number", type: "text", placeholder: "TT-FMB-920-8841", maxLength: 30 },
       {
         key: "protocol",
         label: "Protocol & Gateway Port",
@@ -378,8 +378,8 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Meitrack (Port 5020)", value: "Meitrack (5020)" }
         ]
       },
-      { key: "firmwareVersion", label: "Installed Firmware Version", type: "text", placeholder: "03.28.02.Rev.00" },
-      { key: "simIccid", label: "Installed SIM ICCID", type: "text", placeholder: "89914902194820194812" },
+      { key: "firmwareVersion", label: "Installed Firmware Version", type: "text", placeholder: "03.28.02.Rev.00", maxLength: 30 },
+      { key: "simIccid", label: "Installed SIM ICCID", type: "text", placeholder: "89914902194820194812", maxLength: 20, minLength: 19, validate: "iccid" },
       {
         key: "status",
         label: "Device State",
@@ -424,10 +424,10 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Geofence Types", value: "Geofence Types" }
         ]
       },
-      { key: "itemCode", label: "Item Code / Key", type: "text", required: true, placeholder: "e.g. CAT_REEFER" },
-      { key: "itemName", label: "Item Name / Display Title", type: "text", required: true, placeholder: "e.g. Refrigerated Temperature Controlled" },
+      { key: "itemCode", label: "Item Code / Key", type: "text", required: true, placeholder: "e.g. CAT_REEFER", maxLength: 30 },
+      { key: "itemName", label: "Item Name / Display Title", type: "text", required: true, placeholder: "e.g. Refrigerated Temperature Controlled", maxLength: 100 },
       { key: "displayOrder", label: "Display Order", type: "number", required: true, placeholder: "1" },
-      { key: "description", label: "Description / Calibration Notes", type: "textarea", placeholder: "Notes regarding this lookup classification..." },
+      { key: "description", label: "Description / Calibration Notes", type: "textarea", placeholder: "Notes regarding this lookup classification...", maxLength: 500 },
       {
         key: "status",
         label: "Status",
@@ -470,7 +470,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Metro Intercity Transit Lines", value: "Metro Intercity Transit Lines" }
         ]
       },
-      { key: "ruleName", label: "Rule Name", type: "text", required: true, placeholder: "e.g. National Highway Speed Governance" },
+      { key: "ruleName", label: "Rule Name", type: "text", required: true, placeholder: "e.g. National Highway Speed Governance", maxLength: 100 },
       {
         key: "category",
         label: "Rule Domain",
@@ -484,7 +484,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Maintenance & Sensors", value: "Maintenance" }
         ]
       },
-      { key: "thresholdValue", label: "Threshold Trigger Value", type: "text", required: true, placeholder: "e.g. 80 km/h or 15 mins" },
+      { key: "thresholdValue", label: "Threshold Trigger Value", type: "text", required: true, placeholder: "e.g. 80 km/h or 15 mins", maxLength: 50 },
       {
         key: "notificationChannel",
         label: "Notification Channel",
@@ -550,8 +550,8 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Branch", value: "Branch" }
         ]
       },
-      { key: "entityId", label: "Asset Identifier / Plate / IMEI", type: "text", required: true, placeholder: "e.g. 869018273645190" },
-      { key: "entityName", label: "Asset Name / Model", type: "text", required: true, placeholder: "e.g. Legacy TK103 Unit" },
+      { key: "entityId", label: "Asset Identifier / Plate / IMEI", type: "text", required: true, placeholder: "e.g. 869018273645190", maxLength: 30 },
+      { key: "entityName", label: "Asset Name / Model", type: "text", required: true, placeholder: "e.g. Legacy TK103 Unit", maxLength: 100 },
       {
         key: "reason",
         label: "Decommission Justification",
@@ -564,7 +564,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "Contract Closed", value: "Contract Closed" }
         ]
       },
-      { key: "notes", label: "Engineering & Audit Explanation", type: "textarea", placeholder: "Detailed remarks regarding this removal..." }
+      { key: "notes", label: "Engineering & Audit Explanation", type: "textarea", placeholder: "Detailed remarks regarding this removal...", maxLength: 500 }
     ]
   },
 
@@ -614,7 +614,7 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
       { key: "consumedCount", label: "Currently Consumed", type: "number", placeholder: "0" },
       { key: "balanceRemaining", label: "Remaining Balance", type: "number", placeholder: "25000" },
       { key: "alertThreshold", label: "Low Balance Alert Threshold", type: "number", placeholder: "2500" },
-      { key: "renewalDate", label: "Renewal Date", type: "text", placeholder: "2027-06-30" },
+      { key: "renewalDate", label: "Renewal Date", type: "text", placeholder: "2027-06-30", maxLength: 10, validate: "date" },
       {
         key: "status",
         label: "Quota Status",
@@ -646,8 +646,8 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
       { key: "status", label: "Status" }
     ],
     fields: [
-      { key: "vehiclePlate", label: "Vehicle Registration Plate", type: "text", required: true, placeholder: "e.g. MH-04-AZ-8821" },
-      { key: "gpsImei", label: "Primary GPS Device IMEI", type: "text", required: true, placeholder: "864201948201948" },
+      { key: "vehiclePlate", label: "Vehicle Registration Plate", type: "text", required: true, placeholder: "e.g. MH-04-AZ-8821", maxLength: 15 },
+      { key: "gpsImei", label: "Primary GPS Device IMEI", type: "text", required: true, placeholder: "864201948201948", maxLength: 15, minLength: 15, validate: "imei" },
       {
         key: "sensorType",
         label: "Attached Sensor Configuration",
@@ -660,9 +660,9 @@ export const appConfigRegistry: Record<string, ConfigEntityConfig> = {
           { label: "CANbus OBD-II Engine Tap", value: "CANbus OBD-II Engine Tap" }
         ]
       },
-      { key: "technicianName", label: "Field Technician Name", type: "text", required: true, placeholder: "e.g. Arjun Mistri" },
-      { key: "installationDate", label: "Installation Date", type: "text", placeholder: "2026-03-12" },
-      { key: "calibrationFactor", label: "Sensor Calibration Factor", type: "text", placeholder: "0.985 L/mV" },
+      { key: "technicianName", label: "Field Technician Name", type: "text", required: true, placeholder: "e.g. Arjun Mistri", maxLength: 80 },
+      { key: "installationDate", label: "Installation Date", type: "text", placeholder: "2026-03-12", maxLength: 10, validate: "date" },
+      { key: "calibrationFactor", label: "Sensor Calibration Factor", type: "text", placeholder: "0.985 L/mV", maxLength: 30 },
       {
         key: "health",
         label: "Live Telemetry Status",

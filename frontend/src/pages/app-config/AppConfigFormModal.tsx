@@ -93,11 +93,42 @@ export const AppConfigFormModal: React.FC<AppConfigFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     for (const f of config.fields) {
-      if (f.required) {
-        const val = formData[f.key];
-        if (val === undefined || val === null || String(val).trim() === "") {
-          newErrors[f.key] = `${f.label} is required`;
-        }
+      const val = formData[f.key];
+      const strVal = String(val ?? "").trim();
+
+      // Required check
+      if (f.required && (val === undefined || val === null || strVal === "")) {
+        newErrors[f.key] = `${f.label} is required`;
+        continue;
+      }
+
+      if (!strVal) continue; // skip further validation if empty and not required
+
+      // maxLength check
+      if (f.maxLength && strVal.length > f.maxLength) {
+        newErrors[f.key] = `${f.label} must be at most ${f.maxLength} characters`;
+        continue;
+      }
+
+      // minLength check
+      if (f.minLength && strVal.length < f.minLength) {
+        newErrors[f.key] = `${f.label} must be at least ${f.minLength} characters`;
+        continue;
+      }
+
+      // Format validation
+      if (f.validate === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(strVal)) {
+        newErrors[f.key] = `${f.label} must be a valid email address`;
+      } else if (f.validate === "phone" && !/^\+?[\d\s\-]{7,15}$/.test(strVal)) {
+        newErrors[f.key] = `${f.label} must be a valid phone number`;
+      } else if (f.validate === "imei" && !/^\d{15}$/.test(strVal)) {
+        newErrors[f.key] = `${f.label} must be exactly 15 digits`;
+      } else if (f.validate === "iccid" && !/^\d{19,20}$/.test(strVal)) {
+        newErrors[f.key] = `${f.label} must be 19–20 digits`;
+      } else if (f.validate === "pincode" && !/^\d{6}$/.test(strVal)) {
+        newErrors[f.key] = `${f.label} must be exactly 6 digits`;
+      } else if (f.validate === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(strVal)) {
+        newErrors[f.key] = `${f.label} must be in YYYY-MM-DD format`;
       }
     }
 
@@ -164,6 +195,7 @@ export const AppConfigFormModal: React.FC<AppConfigFormModalProps> = ({
                     value={formData[field.key] ?? ""}
                     onChange={(e) => handleChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
+                    maxLength={field.maxLength}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#1D293D] bg-white dark:bg-[#111C38] text-slate-900 dark:text-white focus-ring transition-colors resize-none"
                   />
                 ) : field.type === "checkbox" ? (
@@ -190,6 +222,7 @@ export const AppConfigFormModal: React.FC<AppConfigFormModalProps> = ({
                       )
                     }
                     placeholder={field.placeholder}
+                    maxLength={field.maxLength}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#1D293D] bg-white dark:bg-[#111C38] text-slate-900 dark:text-white focus-ring transition-colors"
                   />
                 )}

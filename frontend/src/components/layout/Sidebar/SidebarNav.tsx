@@ -187,7 +187,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                           >
                             <ChevronDown
                               className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                                isSubmenuOpen ? "rotate-180 text-blue-600 dark:text-blue-400" : "rotate-0"
+                                isSubmenuOpen
+                                  ? "rotate-180 text-blue-600 dark:text-blue-400"
+                                  : isParentActive
+                                  ? "rotate-0 text-blue-500 dark:text-blue-300"
+                                  : "rotate-0 text-slate-400"
                               }`}
                             />
                           </button>
@@ -265,14 +269,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                               key={subItem.key}
                               to={subItem.path}
                               onClick={onItemClick}
-                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                                 isSubActive
                                   ? "bg-blue-50 text-blue-600 border border-blue-200 font-semibold dark:bg-blue-600/20 dark:text-blue-400 dark:border-blue-500/30"
                                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D]/50"
                               }`}
                             >
                               <div className="flex items-center gap-2 truncate">
-                                {SubIcon && <SubIcon className="h-3.5 w-3.5 shrink-0 opacity-80" />}
+                                {SubIcon && <SubIcon className="h-4 w-4 shrink-0 opacity-80" />}
                                 <span className="truncate">{subItem.name}</span>
                               </div>
                               {subItem.badge && (

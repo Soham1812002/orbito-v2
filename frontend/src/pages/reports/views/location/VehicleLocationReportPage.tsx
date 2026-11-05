@@ -40,11 +40,8 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "vehicleNo",
         minWidth: 160,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-              {params.value}
-            </div>
-            <div className="text-[10px] text-slate-400 font-mono">IMEI: {params.data?.imei}</div>
+          <div className="flex items-center h-full font-bold text-slate-900 dark:text-white font-mono text-xs">
+            {params.value}
           </div>
         )
       },
@@ -53,9 +50,8 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "company",
         minWidth: 150,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-semibold text-slate-800 dark:text-slate-200">{params.value}</div>
-            <div className="text-[11px] text-slate-400">{params.data?.branch}</div>
+          <div className="flex items-center h-full font-semibold text-slate-800 dark:text-slate-200">
+            {params.value}
           </div>
         )
       },
@@ -64,9 +60,8 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "driverName",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-semibold text-slate-800 dark:text-slate-200">{params.value}</div>
-            <div className="text-[11px] text-slate-400 font-mono">{params.data?.driverPhone}</div>
+          <div className="flex items-center h-full font-semibold text-slate-800 dark:text-slate-200">
+            {params.value}
           </div>
         )
       },
@@ -75,7 +70,7 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "currentAddress",
         minWidth: 260,
         cellRenderer: (params: any) => (
-          <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+          <div className="flex items-center h-full gap-1.5 text-slate-700 dark:text-slate-300">
             <MapPin className="h-3.5 w-3.5 text-blue-500 shrink-0" />
             <span className="truncate" title={params.value}>{params.value}</span>
           </div>
@@ -86,9 +81,9 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "latitude",
         minWidth: 160,
         cellRenderer: (params: any) => (
-          <span className="font-mono text-[11px] text-slate-500">
+          <div className="flex items-center h-full font-mono text-[11px] text-slate-500">
             {params.data?.latitude?.toFixed(4)}°, {params.data?.longitude?.toFixed(4)}°
-          </span>
+          </div>
         )
       },
       {
@@ -96,11 +91,8 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "speedKmH",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <div className="font-mono text-center">
-            <div className="font-bold text-slate-900 dark:text-white text-2xs">
-              {params.value} <span className="text-[10px] text-slate-400 font-normal">km/h</span>
-            </div>
-            <div className="text-[10px] text-slate-400">{params.data?.heading}</div>
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-slate-900 dark:text-white">
+            {params.value} <span className="text-[10px] text-slate-400 font-normal ml-0.5">km/h</span>
           </div>
         )
       },
@@ -109,16 +101,18 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "gpsSignal",
         minWidth: 120,
         cellRenderer: (params: any) => (
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${
-              params.value === "ONLINE"
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
-                : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
-            }`}
-          >
-            <Signal className="h-3 w-3" />
-            {params.value}
-          </span>
+          <div className="flex items-center h-full">
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${
+                params.value === "ONLINE"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
+              }`}
+            >
+              <Signal className="h-3 w-3" />
+              {params.value}
+            </span>
+          </div>
         )
       },
       {
@@ -126,9 +120,9 @@ export const VehicleLocationReportPage: React.FC = () => {
         field: "lastUpdated",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono text-slate-500 text-[11px]">
+          <div className="flex items-center h-full font-mono text-slate-500 text-[11px]">
             {params.value}
-          </span>
+          </div>
         )
       }
     ],
@@ -166,7 +160,7 @@ export const VehicleLocationReportPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<VehicleLocationRow>
           rowData={rows}
           columnDefs={columns}

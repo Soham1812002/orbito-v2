@@ -40,11 +40,8 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "vehicleNo",
         minWidth: 170,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-              {params.value}
-            </div>
-            <div className="text-[11px] text-slate-500 truncate max-w-xs">{params.data?.organization}</div>
+          <div className="flex items-center h-full font-bold text-slate-900 dark:text-white font-mono text-xs">
+            {params.value}
           </div>
         )
       },
@@ -53,9 +50,8 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "vehicleType",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-semibold text-slate-800 dark:text-slate-200">{params.value}</div>
-            <div className="text-[11px] text-slate-400">{params.data?.model}</div>
+          <div className="flex items-center h-full font-semibold text-slate-800 dark:text-slate-200">
+            {params.value}
           </div>
         )
       },
@@ -64,16 +60,18 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "powerIgnition",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-              params.value === "ON"
-                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-            }`}
-          >
-            <Zap className="h-3 w-3" />
-            {params.value}
-          </span>
+          <div className="flex items-center h-full">
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                params.value === "ON"
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              }`}
+            >
+              <Zap className="h-3 w-3" />
+              {params.value}
+            </span>
+          </div>
         )
       },
       {
@@ -88,13 +86,15 @@ export const VehicleStatusReportPage: React.FC = () => {
             Offline: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
           };
           return (
-            <span
-              className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${
-                statusBadges[params.value] || "bg-slate-100 text-slate-700"
-              }`}
-            >
-              {params.value}
-            </span>
+            <div className="flex items-center h-full">
+              <span
+                className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${
+                  statusBadges[params.value] || "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {params.value}
+              </span>
+            </div>
           );
         }
       },
@@ -103,9 +103,9 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "speedKmH",
         minWidth: 100,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-900 dark:text-white">
-            {params.value} <span className="text-[10px] text-slate-400 font-normal">km/h</span>
-          </span>
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-slate-900 dark:text-white">
+            {params.value} <span className="text-[10px] text-slate-400 font-normal ml-0.5">km/h</span>
+          </div>
         )
       },
       {
@@ -113,9 +113,9 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "batteryVoltage",
         minWidth: 100,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-semibold text-2xs text-slate-700 dark:text-slate-300">
+          <div className="flex items-center h-full font-mono font-semibold text-[11px] text-slate-700 dark:text-slate-300">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -123,9 +123,8 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "connectivity",
         minWidth: 150,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="text-slate-800 dark:text-slate-200 font-mono text-[11px]">{params.value}</div>
-            <div className="text-[10px] text-slate-400 font-mono">SIM: {params.data?.simNumber}</div>
+          <div className="flex items-center h-full text-slate-800 dark:text-slate-200 font-mono text-[11px]">
+            {params.value}
           </div>
         )
       },
@@ -134,11 +133,8 @@ export const VehicleStatusReportPage: React.FC = () => {
         field: "lastCommunication",
         minWidth: 180,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="text-slate-800 dark:text-slate-200 text-xs font-medium">
-              {params.value}
-            </div>
-            <div className="text-[11px] text-slate-400 truncate max-w-xs">{params.data?.location}</div>
+          <div className="flex items-center h-full text-slate-800 dark:text-slate-200 text-xs font-medium">
+            {params.value}
           </div>
         )
       }
@@ -179,7 +175,7 @@ export const VehicleStatusReportPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<VehicleStatusRow>
           rowData={rows}
           columnDefs={columns}

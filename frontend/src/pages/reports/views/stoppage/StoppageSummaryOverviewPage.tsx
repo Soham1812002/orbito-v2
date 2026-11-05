@@ -40,29 +40,20 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         headerName: "Vehicle Details",
         field: "vehicleNo",
         minWidth: 160,
-        cellRenderer: (params: any) => {
-          const row: StoppageOverviewRow = params.data;
-          if (!row) return null;
-          return (
-            <div>
-              <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-                {row.vehicleNo}
-              </div>
-              <div className="text-2xs text-slate-400 truncate max-w-xs">
-                Last: {row.lastStoppageLocation}
-              </div>
-            </div>
-          );
-        }
+        cellRenderer: (params: any) => (
+          <div className="flex items-center h-full font-bold text-slate-900 dark:text-white font-mono text-xs">
+            {params.value}
+          </div>
+        )
       },
       {
         headerName: "Branch",
         field: "branch",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="text-slate-700 dark:text-slate-300 font-medium">
+          <div className="flex items-center h-full text-slate-700 dark:text-slate-300 font-medium">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -70,9 +61,9 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         field: "driverName",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <span className="font-semibold text-slate-800 dark:text-slate-200">
+          <div className="flex items-center h-full font-semibold text-slate-800 dark:text-slate-200">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -80,9 +71,11 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         field: "totalStoppages",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="px-2.5 py-0.5 rounded-full font-mono text-2xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
-            {params.value} Events
-          </span>
+          <div className="flex items-center h-full">
+            <span className="px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+              {params.value} Events
+            </span>
+          </div>
         )
       },
       {
@@ -90,9 +83,9 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         field: "totalStoppageTime",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-rose-600 dark:text-rose-400">
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-rose-600 dark:text-rose-400">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -100,9 +93,9 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         field: "longestStoppage",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span className="font-mono text-2xs text-slate-700 dark:text-slate-300">
+          <div className="flex items-center h-full font-mono text-[11px] text-slate-700 dark:text-slate-300">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -110,9 +103,9 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         field: "avgStoppageTime",
         minWidth: 120,
         cellRenderer: (params: any) => (
-          <span className="font-mono text-2xs text-slate-500">
+          <div className="flex items-center h-full font-mono text-[11px] text-slate-500">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -122,13 +115,15 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
         sortable: false,
         filter: false,
         cellRenderer: (params: any) => (
-          <Link
-            to={`/reports/stoppage-summary/${encodeURIComponent(params.value)}`}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white font-semibold text-2xs transition-colors"
-          >
-            <span>View Events</span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="flex items-center h-full">
+            <Link
+              to={`/reports/stoppage-summary/${encodeURIComponent(params.value)}`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white font-semibold text-[11px] transition-colors"
+            >
+              <span>View Events</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         )
       }
     ],
@@ -166,7 +161,7 @@ export const StoppageSummaryOverviewPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<StoppageOverviewRow>
           rowData={rows}
           columnDefs={columns}

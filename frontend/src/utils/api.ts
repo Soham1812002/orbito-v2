@@ -99,11 +99,21 @@ apiClient.interceptors.response.use(
 
       try {
         // Call backend refresh endpoint; browser sends httpOnly orbito_refresh_token cookie
-        await axios.post(
+        const refreshResponse = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
+
+        // Save new access token to whichever storage was used at login
+        const newToken = refreshResponse.data?.result?.token;
+        if (newToken) {
+          if (localStorage.getItem("orbito_token")) {
+            localStorage.setItem("orbito_token", newToken);
+          } else {
+            sessionStorage.setItem("orbito_token", newToken);
+          }
+        }
 
         processQueue(null);
         return apiClient(originalRequest);

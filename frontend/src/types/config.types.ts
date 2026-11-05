@@ -8,6 +8,9 @@ export interface ConfigFieldDef {
   placeholder?: string;
   options?: { label: string; value: string }[];
   helperText?: string;
+  maxLength?: number;
+  minLength?: number;
+  validate?: "email" | "phone" | "imei" | "iccid" | "pincode" | "date";
 }
 
 export interface ConfigColumnDef {

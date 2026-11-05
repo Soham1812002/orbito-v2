@@ -41,11 +41,8 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "vehicleNo",
         minWidth: 170,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-bold text-slate-900 dark:text-white font-mono text-xs">
-              {params.value}
-            </div>
-            <div className="text-[10px] text-slate-400 font-mono">IMEI: {params.data?.imei}</div>
+          <div className="flex items-center h-full font-bold text-slate-900 dark:text-white font-mono text-xs">
+            {params.value}
           </div>
         )
       },
@@ -54,9 +51,8 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "company",
         minWidth: 160,
         cellRenderer: (params: any) => (
-          <div>
-            <div className="font-medium text-slate-800 dark:text-slate-200">{params.value}</div>
-            <div className="text-[11px] text-slate-500">{params.data?.branch}</div>
+          <div className="flex items-center h-full font-medium text-slate-800 dark:text-slate-200">
+            {params.value}
           </div>
         )
       },
@@ -65,9 +61,9 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "driverName",
         minWidth: 140,
         cellRenderer: (params: any) => (
-          <span className="font-semibold text-slate-800 dark:text-slate-200">
+          <div className="flex items-center h-full font-semibold text-slate-800 dark:text-slate-200">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -75,7 +71,7 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "ignitionOnDuration",
         minWidth: 160,
         cellRenderer: (params: any) => (
-          <div className="font-mono text-2xs">
+          <div className="flex items-center h-full font-mono text-[11px]">
             <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{params.value}</span>
             <span className="text-slate-400 mx-1">/</span>
             <span className="text-slate-500">{params.data?.ignitionOffDuration}</span>
@@ -87,7 +83,7 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "runningTime",
         minWidth: 150,
         cellRenderer: (params: any) => (
-          <div className="font-mono text-2xs">
+          <div className="flex items-center h-full font-mono text-[11px]">
             <span className="text-blue-600 dark:text-blue-400 font-semibold">{params.value}</span>
             <span className="text-slate-400 mx-1">·</span>
             <span className="text-amber-500">{params.data?.idleTime}</span>
@@ -99,9 +95,9 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "distanceKm",
         minWidth: 110,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-900 dark:text-white">
-            {params.value} <span className="text-[10px] text-slate-400 font-normal">km</span>
-          </span>
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-slate-900 dark:text-white">
+            {params.value} <span className="text-[10px] text-slate-400 font-normal ml-0.5">km</span>
+          </div>
         )
       },
       {
@@ -109,9 +105,9 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "ignitionCycles",
         minWidth: 90,
         cellRenderer: (params: any) => (
-          <span className="font-mono font-bold text-2xs text-slate-700 dark:text-slate-300">
+          <div className="flex items-center h-full font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300">
             {params.value}
-          </span>
+          </div>
         )
       },
       {
@@ -119,15 +115,17 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         field: "currentStatus",
         minWidth: 130,
         cellRenderer: (params: any) => (
-          <span
-            className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
-              params.value === "Engine running"
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-            }`}
-          >
-            {params.value}
-          </span>
+          <div className="flex items-center h-full">
+            <span
+              className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
+                params.value === "Engine running"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+              }`}
+            >
+              {params.value}
+            </span>
+          </div>
         )
       },
       {
@@ -137,13 +135,15 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
         sortable: false,
         filter: false,
         cellRenderer: (params: any) => (
-          <Link
-            to={`/reports/ignition-summary/${encodeURIComponent(params.value)}`}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white font-semibold text-2xs transition-colors"
-          >
-            <span>Events</span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="flex items-center h-full">
+            <Link
+              to={`/reports/ignition-summary/${encodeURIComponent(params.value)}`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white font-semibold text-[11px] transition-colors"
+            >
+              <span>Events</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         )
       }
     ],
@@ -183,7 +183,7 @@ export const IgnitionSummaryOverviewPage: React.FC = () => {
       />
 
       {/* Responsive Data Table using AppDataTable */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="w-full">
         <AppDataTable<IgnitionSummaryOverviewRow>
           rowData={rows}
           columnDefs={columns}
