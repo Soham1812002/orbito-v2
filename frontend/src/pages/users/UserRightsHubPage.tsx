@@ -12,9 +12,9 @@ export const UserRightsHubPage: React.FC = () => {
   const { data: userData } = useUserList({ page: 1, limit: 100 });
   const { data: groupData } = useUserGroupList();
 
-  const totalUsers = userData?.total ?? 8;
-  const activeUsers = userData?.rows?.filter((u) => u.isActive).length ?? 8;
-  const totalGroups = groupData?.total ?? 3;
+  const totalUsers = userData?.allCount ?? userData?.total ?? 0;
+  const activeUsers = userData?.activeCount ?? (userData?.rows ? userData.rows.filter((u) => u.isActive).length : 0);
+  const totalGroups = groupData?.total ?? 0;
 
   const cards = [
     {
@@ -73,8 +73,7 @@ export const UserRightsHubPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={[
-          { label: "System Config", href: "/system-config" },
-          { label: "User Rights Module" }
+          { label: "User Rights" }
         ]}
         title="User Rights Module"
         description="Manage user access, group memberships, and permission policies across your fleet organization."

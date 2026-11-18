@@ -51,6 +51,7 @@ export const UserGroupFormPage: React.FC = () => {
     reset,
     watch,
     setValue,
+    setError,
     formState: { errors, isSubmitting }
   } = useForm<UserGroupFormData>({
     resolver: zodResolver(userGroupFormSchema),
@@ -99,8 +100,10 @@ export const UserGroupFormPage: React.FC = () => {
     if (!groupId) return;
     const source = allGroups?.rows?.find((g) => g.id === groupId);
     if (source) {
-      setValue("company", source.company);
-      setValue("adminRole", source.adminRole);
+      if (source.company) setValue("company", source.company);
+      if (source.branch) setValue("branch", source.branch);
+      if (source.reseller) setValue("reseller", source.reseller);
+      if (source.adminRole) setValue("adminRole", source.adminRole);
       setValue("allowExcelExport", source.allowExcelExport);
       setValue("allowOperationalManage", source.allowOperationalManage);
       setValue("isSystemAdmin", source.isSystemAdmin);
@@ -139,8 +142,25 @@ export const UserGroupFormPage: React.FC = () => {
         await createGroupMutation.mutateAsync(payload);
       }
       navigate("/users/groups");
-    } catch {
-      // Error handled by mutation
+    } catch (err: any) {
+      const resData = err?.response?.data;
+      const rawMsg =
+        (Array.isArray(resData?.errors) ? resData.errors.join(", ") : null) ||
+        resData?.message ||
+        resData?.error ||
+        err?.message ||
+        "Failed to save user group";
+
+      const formattedMsg = rawMsg.toLowerCase().includes("duplicate") || rawMsg.toLowerCase().includes("unique")
+        ? "User group with this name already exists for this company"
+        : rawMsg;
+
+      if (formattedMsg.toLowerCase().includes("name") || formattedMsg.toLowerCase().includes("duplicate")) {
+        setError("name", { message: formattedMsg });
+        showToast.error(formattedMsg);
+      } else {
+        showToast.error(formattedMsg);
+      }
     }
   };
 
@@ -160,43 +180,22 @@ export const UserGroupFormPage: React.FC = () => {
       <PageHeader
         breadcrumbs={[
           { label: "User Rights", href: "/users" },
-          { label: "User Groups", href: "/users/groups" },
-          { label: isEdit ? "Edit Group Detail" : "User Group Detail" }
+          { label: "User Groups & RBAC", href: "/users/groups" }
         ]}
-        title={isEdit ? `Edit Group: ${existingGroup?.name || ""}` : "User Group Detail"}
+        title={isEdit ? `Edit Group: ${existingGroup?.name || ""}` : "Add User Group"}
         badge={isEdit ? "EXISTING GROUP" : "NEW GROUP"}
         badgeVariant="cyan"
         description="Configure role inheritance, policy privileges, and granular CRUD permissions across fleet modules."
         actions={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              leftIcon={<ArrowLeft className="h-4 w-4" />}
-              onClick={() => navigate("/users/groups")}
-            >
-              Back to Groups
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              leftIcon={<X className="h-4 w-4" />}
-              onClick={() => navigate("/users/groups")}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              leftIcon={<Save className="h-4 w-4" />}
-              disabled={isSubmitting || createGroupMutation.isPending || updateGroupMutation.isPending}
-            >
-              {isSubmitting ? "Saving Group..." : isEdit ? "Update User Group" : "Save Group"}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            onClick={() => navigate("/users/groups")}
+          >
+            Back to Groups
+          </Button>
         }
       />
 
@@ -241,11 +240,12 @@ export const UserGroupFormPage: React.FC = () => {
             label="Reseller / Distributor"
             {...register("reseller")}
             sizeVariant="md"
-          >
-            <option value="Direct Enterprise">Direct Enterprise</option>
-            <option value="Apex Telecom Reseller">Apex Telecom Reseller</option>
-            <option value="Velocity Distribution India">Velocity Distribution India</option>
-          </Select>
+            options={[
+              { label: "Direct Enterprise", value: "Direct Enterprise" },
+              { label: "Apex Telecom Reseller", value: "Apex Telecom Reseller" },
+              { label: "Velocity Distribution India", value: "Velocity Distribution India" }
+            ]}
+          />
 
           {/* Company */}
           <Select
@@ -253,26 +253,24 @@ export const UserGroupFormPage: React.FC = () => {
             {...register("company")}
             error={errors.company?.message}
             sizeVariant="md"
-          >
-            {companies.filter((c) => c !== "All Companies").map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </Select>
+            options={companies
+              .filter((c) => c !== "All Companies")
+              .map((c) => ({ label: c, value: c }))}
+          />
 
           {/* Branch */}
           <Select
             label="Operating Branch"
             {...register("branch")}
             sizeVariant="md"
-          >
-            <option value="Mumbai Central Hub">Mumbai Central Hub</option>
-            <option value="Delhi NCR Depot">Delhi NCR Depot</option>
-            <option value="Bengaluru Tech Park">Bengaluru Tech Park</option>
-            <option value="Ahmedabad Transit Hub">Ahmedabad Transit Hub</option>
-            <option value="Chennai Port Depot">Chennai Port Depot</option>
-          </Select>
+            options={[
+              { label: "Mumbai Central Hub", value: "Mumbai Central Hub" },
+              { label: "Delhi NCR Depot", value: "Delhi NCR Depot" },
+              { label: "Bengaluru Tech Park", value: "Bengaluru Tech Park" },
+              { label: "Ahmedabad Transit Hub", value: "Ahmedabad Transit Hub" },
+              { label: "Chennai Port Depot", value: "Chennai Port Depot" }
+            ]}
+          />
 
           {/* Group Name */}
           <div className="space-y-1.5">
@@ -296,31 +294,32 @@ export const UserGroupFormPage: React.FC = () => {
             {...register("adminRole")}
             error={errors.adminRole?.message}
             sizeVariant="md"
-          >
-            {roles.map((r) => (
-              <option key={r.id} value={r.name}>
-                {r.name}
-              </option>
-            ))}
-          </Select>
+            options={roles.map((r) => ({
+              label: r.name.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase()),
+              value: r.name
+            }))}
+          />
 
           {/* Duplicate Group Template Selector (Figma Node 3039:200 Frame 5) */}
           <Select
             label="Duplicate from Existing Group"
-            onChange={(e) => handleDuplicateTemplate(e.target.value)}
+            onChange={(e) => {
+              handleDuplicateTemplate(e.target.value);
+              e.target.value = "";
+            }}
             sizeVariant="md"
-          >
-            <option value="">Select template to copy...</option>
-            {allGroups?.rows?.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name} ({g.company})
-              </option>
-            ))}
-          </Select>
+            options={[
+              { label: "Select template to copy...", value: "" },
+              ...(allGroups?.rows || []).map((g) => ({
+                label: `${g.name} (${g.company})`,
+                value: g.id
+              }))
+            ]}
+          />
 
           {/* Description */}
           <div className="space-y-1.5 md:col-span-2 lg:col-span-3">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Group Operational Description <span className="text-rose-500">*</span>
             </label>
             <textarea

@@ -48,7 +48,7 @@ export const TableFilterBar: React.FC<TableFilterBarProps> = ({
         {/* Left Side: Search + Status Chips + Additional Custom Filters */}
         <div className="flex flex-1 flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5">
           {/* Search Box */}
-          <div className="relative w-full sm:w-60 lg:w-64">
+          <div className="relative w-full sm:w-64 lg:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
@@ -96,10 +96,10 @@ export const TableFilterBar: React.FC<TableFilterBarProps> = ({
               variant="outline"
               size="sm"
               onClick={onRefresh}
-              isLoading={isRefreshing}
+              disabled={isRefreshing}
               title="Refresh table records"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
             </Button>
           )}
 

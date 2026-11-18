@@ -137,4 +137,11 @@ export interface UserGroupFilters {
   limit?: number;
   search?: string;
   company?: string;
+  isActive?: boolean;
+  filter?: {
+    company?: string;
+    isActive?: boolean;
+  };
+  sortBy?: string;
+  sortDir?: "ASC" | "DESC";
 }

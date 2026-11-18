@@ -4,18 +4,39 @@ export const userFormSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Valid email address is required"),
-  phone: z.string().min(8, "Phone number is required"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine(
+      (val) => {
+        const cleaned = val.trim();
+        if (!/^[\d\s\-+]+$/.test(cleaned)) return false;
+
+        if (cleaned.startsWith("+91")) {
+          const digitsAfterCode = cleaned.slice(3).replace(/\D/g, "");
+          return digitsAfterCode.length === 10;
+        }
+        if (cleaned.startsWith("+")) {
+          const digitsOnly = cleaned.replace(/\D/g, "");
+          return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+        }
+        const digits = cleaned.replace(/\D/g, "");
+        return digits.length === 10 || (digits.startsWith("91") && digits.length === 12);
+      },
+      { message: "Please enter a valid 10-digit mobile number" }
+    ),
   password: z
     .string()
     .optional()
     .refine((val) => !val || val.length >= 6, {
-      message: "Password must be at least 6 characters if provided"
+      message: "Password must be at least 6 characters"
     }),
   confirmPassword: z.string().optional(),
   company: z.string().min(1, "Company selection is required"),
   branch: z.string().optional(),
   reseller: z.string().optional(),
   allocationGroup: z.string().min(1, "Allocation group is required"),
+  groupId: z.string().optional().nullable(),
   role: z.string().min(1, "System role is required"),
   roleIds: z.array(z.string()).default([]),
   isActive: z.boolean().default(true),
@@ -35,7 +56,7 @@ export const userFormSchema = z.object({
     emailAlerts: true
   })
 }).refine((data) => {
-  if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+  if (data.password && (!data.confirmPassword || data.password !== data.confirmPassword)) {
     return false;
   }
   return true;

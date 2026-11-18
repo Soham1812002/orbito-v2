@@ -46,12 +46,18 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Standardized Typography Scale (eliminating ad-hoc bracket font sizes) */
-  --text-2xs: 0.625rem;              /* 10px: Micro badges, table headers, compact alerts */
-  --text-2xs--line-height: 0.875rem; /* 14px */
-  --text-xs-compact: 0.6875rem;      /* 11px: Telematics unit subtext, phone numbers, secondary pills */
-  --text-xs-compact--line-height: 1rem; /* 16px */
-  --text-table: 0.8125rem;           /* 13px: Dense data grids and AG Grid rows */
-  --text-table--line-height: 1.125rem; /* 18px */
+  --text-2xs: 0.625rem;
+  /* 10px: Micro badges, table headers, compact alerts */
+  --text-2xs--line-height: 0.875rem;
+  /* 14px */
+  --text-xs-compact: 0.6875rem;
+  /* 11px: Telematics unit subtext, phone numbers, secondary pills */
+  --text-xs-compact--line-height: 1rem;
+  /* 16px */
+  --text-table: 0.8125rem;
+  /* 13px: Dense data grids and AG Grid rows */
+  --text-table--line-height: 1.125rem;
+  /* 18px */
 }
 
 @layer base {
@@ -64,17 +70,28 @@
     --app-text-muted: #94A3B8;
 
     /* Global Typography Size Variables (for CSS / JS / custom widgets) */
-    --font-size-2xs: 0.625rem;       /* 10px */
-    --font-size-xs-compact: 0.6875rem; /* 11px */
-    --font-size-xs: 0.75rem;         /* 12px */
-    --font-size-table: 0.8125rem;     /* 13px */
-    --font-size-sm: 0.875rem;        /* 14px */
-    --font-size-base: 1rem;          /* 16px */
-    --font-size-lg: 1.125rem;        /* 18px */
-    --font-size-xl: 1.25rem;         /* 20px */
-    --font-size-2xl: 1.5rem;         /* 24px */
-    --font-size-3xl: 1.875rem;       /* 30px */
-    --font-size-4xl: 2.25rem;        /* 36px */
+    --font-size-2xs: 0.625rem;
+    /* 10px */
+    --font-size-xs-compact: 0.6875rem;
+    /* 11px */
+    --font-size-xs: 0.75rem;
+    /* 12px */
+    --font-size-table: 0.8125rem;
+    /* 13px */
+    --font-size-sm: 0.875rem;
+    /* 14px */
+    --font-size-base: 1rem;
+    /* 16px */
+    --font-size-lg: 1.125rem;
+    /* 18px */
+    --font-size-xl: 1.25rem;
+    /* 20px */
+    --font-size-2xl: 1.5rem;
+    /* 24px */
+    --font-size-3xl: 1.875rem;
+    /* 30px */
+    --font-size-4xl: 2.25rem;
+    /* 36px */
   }
 
   .dark {
@@ -104,6 +121,7 @@
 
 /* Common Design Utilities & Component Classes */
 @layer components {
+
   /* 1. Surface & Panel Containers */
   .panel-card {
     @apply rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all dark:border-slate-800 dark:bg-[#0F172B];
@@ -188,21 +206,27 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(156, 163, 175, 0.35);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(156, 163, 175, 0.6);
 }
 
 /* Dark mode AG Grid Quartz overrides */
-.dark .ag-theme-quartz {
+.dark .ag-theme-quartz,
+.dark .ag-theme-quartz-dark {
   --ag-background-color: #0f172a;
   --ag-header-background-color: #1e293b;
+  --ag-header-cell-hover-background-color: #243044;
+  --ag-header-cell-moving-background-color: #243044;
   --ag-odd-row-background-color: #0b1120;
   --ag-foreground-color: #f1f5f9;
   --ag-header-foreground-color: #cbd5e1;
@@ -213,12 +237,32 @@
   --ag-font-family: var(--font-inter);
 }
 
+.dark .ag-theme-quartz .ag-header-cell:hover {
+  background-color: #243044 !important;
+}
+
 .ag-theme-quartz {
   --ag-font-family: var(--font-inter);
   --ag-font-size: 13px;
-  --ag-header-font-weight: 600;
+  --ag-header-font-weight: 700;
+  --ag-header-background-color: #f8fafc;
+  --ag-header-foreground-color: #475569;
+  --ag-header-cell-hover-background-color: #f1f5f9;
+  --ag-border-color: #e2e8f0;
+  --ag-row-border-color: #f1f5f9;
   border-radius: 0.75rem;
   overflow: hidden;
+}
+
+.ag-theme-quartz .ag-header-cell-text {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.ag-theme-quartz .ag-header-cell-center .ag-header-cell-label {
+  justify-content: center !important;
 }
 
 .ag-theme-quartz .ag-cell {

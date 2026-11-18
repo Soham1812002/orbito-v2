@@ -9,6 +9,13 @@ export interface UserGroupFilterParams {
   limit?: number;
   search?: string;
   company?: string;
+  isActive?: string | boolean;
+  filter?: {
+    company?: string;
+    isActive?: boolean;
+  };
+  sortBy?: string;
+  sortDir?: "ASC" | "DESC";
 }
 
 export class UserGroupService {
@@ -17,7 +24,17 @@ export class UserGroupService {
     const limit = Math.min(100, Math.max(1, Number(params.limit) || 10));
     const offset = (page - 1) * limit;
 
-    const where: WhereOptions = {};
+    const baseWhere: WhereOptions = {};
+
+    if (
+      params.company &&
+      params.company !== "ALL" &&
+      params.company !== "All Companies"
+    ) {
+      baseWhere.company = params.company;
+    }
+
+    const where: WhereOptions = { ...baseWhere };
 
     if (params.search) {
       const q = `%${params.search.trim()}%`;
@@ -29,16 +46,40 @@ export class UserGroupService {
       ];
     }
 
-    if (params.company && params.company !== "ALL") {
-      where.company = params.company;
+    const rawIsActive = params.filter?.isActive !== undefined ? params.filter.isActive : params.isActive;
+    if (rawIsActive !== undefined && rawIsActive !== "all") {
+      where.isActive = rawIsActive === "true" || rawIsActive === true;
+    }
+
+    let order: any[] = [["created_at", "DESC"]];
+    if (params.sortBy) {
+      const sortColumnMap: Record<string, string> = {
+        name: "name",
+        company: "company",
+        adminRole: "admin_role",
+        isActive: "is_active",
+        createdAt: "created_at",
+        updatedAt: "updated_at"
+      };
+      const dbCol = sortColumnMap[params.sortBy];
+      if (dbCol) {
+        order = [[dbCol, params.sortDir === "ASC" ? "ASC" : "DESC"]];
+      }
     }
 
     const { count, rows } = await UserGroup.findAndCountAll({
       where,
       limit,
       offset,
-      order: [["created_at", "DESC"]]
+      order
     });
+
+    // Dynamic database counts for status chips
+    const [activeCount, inactiveCount] = await Promise.all([
+      UserGroup.count({ where: { ...baseWhere, isActive: true } }),
+      UserGroup.count({ where: { ...baseWhere, isActive: false } })
+    ]);
+    const allCount = activeCount + inactiveCount;
 
     // Populate user counts dynamically
     const groupItems = await Promise.all(
@@ -70,7 +111,11 @@ export class UserGroupService {
       total: count,
       page,
       pageSize: limit,
-      totalPages: Math.ceil(count / limit) || 1
+      totalPages: Math.ceil(count / limit) || 1,
+      allCount,
+      activeCount,
+      inactiveCount,
+      suspendedCount: inactiveCount
     };
   }
 
@@ -131,6 +176,16 @@ export class UserGroupService {
         err.status = 404;
         throw err;
       }
+      if (group.isSystemAdmin) {
+        const err: any = new Error("System Administrator root group cannot be deleted");
+        err.status = 400;
+        throw err;
+      }
+      // Safely unassign all user accounts attached to this group so they fall back to default permissions
+      await User.update(
+        { groupId: null as any },
+        { where: { groupId: group.id }, transaction: t }
+      );
       await group.destroy({ transaction: t });
       return { id: group.id };
     });
@@ -147,8 +202,13 @@ export class UserGroupService {
         { adminRole: { [Op.iLike]: q } }
       ];
     }
-    if (params.company && params.company !== "ALL") {
+    if (params.company && params.company !== "ALL" && params.company !== "All Companies") {
       where.company = params.company;
+    }
+
+    const rawIsActive = params.filter?.isActive !== undefined ? params.filter.isActive : params.isActive;
+    if (rawIsActive !== undefined && rawIsActive !== "all") {
+      where.isActive = rawIsActive === "true" || rawIsActive === true;
     }
 
     const columns: ExportColumn<UserGroup>[] = [

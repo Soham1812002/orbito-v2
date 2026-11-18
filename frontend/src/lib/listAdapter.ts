@@ -4,6 +4,10 @@ export interface NormalizedListResult<T> {
   page: number;
   pageSize: number;
   totalPages: number;
+  allCount?: number;
+  activeCount?: number;
+  suspendedCount?: number;
+  inactiveCount?: number;
 }
 
 export function listAdapter<T = any>(response: any): NormalizedListResult<T> {
@@ -14,6 +18,10 @@ export function listAdapter<T = any>(response: any): NormalizedListResult<T> {
   let page = 1;
   let pageSize = 10;
   let totalPages = 1;
+  let activeCount: number | undefined;
+  let suspendedCount: number | undefined;
+  let inactiveCount: number | undefined;
+  let allCount: number | undefined;
 
   if (Array.isArray(data)) {
     rawItems = data;
@@ -33,6 +41,10 @@ export function listAdapter<T = any>(response: any): NormalizedListResult<T> {
     page = meta.currentPage ?? meta.page ?? 1;
     pageSize = meta.limit ?? meta.pageSize ?? 10;
     totalPages = meta.totalPages ?? (Math.ceil(total / pageSize) || 1);
+    allCount = meta.allCount ?? data.allCount;
+    activeCount = meta.activeCount ?? data.activeCount;
+    suspendedCount = meta.suspendedCount ?? data.suspendedCount ?? meta.inactiveCount ?? data.inactiveCount;
+    inactiveCount = meta.inactiveCount ?? data.inactiveCount ?? suspendedCount;
   }
 
   // Canonical ID normalization: ensure both id and _id exist on each item
@@ -48,11 +60,21 @@ export function listAdapter<T = any>(response: any): NormalizedListResult<T> {
     return item;
   });
 
+  const calculatedAll =
+    allCount ??
+    (activeCount !== undefined && suspendedCount !== undefined
+      ? activeCount + suspendedCount
+      : total);
+
   return {
     rows,
     total,
     page,
     pageSize,
-    totalPages
+    totalPages,
+    allCount: calculatedAll,
+    activeCount,
+    suspendedCount,
+    inactiveCount
   };
 }
