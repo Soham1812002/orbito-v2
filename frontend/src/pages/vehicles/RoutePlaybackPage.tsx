@@ -22,16 +22,17 @@ export const RoutePlaybackPage: React.FC = () => {
   const navigate = useNavigate();
 
   const urlVehicleId = searchParams.get("vehicleId") || undefined;
+  const urlDate = searchParams.get("date") || "today";
   const { data: vehicles = [] } = useVehicles();
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<string>("today");
+  const [selectedDate, setSelectedDate] = useState<string>(urlDate);
 
   // Continuous Sub-Frame Replay Transport State
   const [progress, setProgress] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [followVehicle, setFollowVehicle] = useState<boolean>(true);
+  const [followVehicle, setFollowVehicle] = useState<boolean>(false);
 
   const animFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -109,15 +110,24 @@ export const RoutePlaybackPage: React.FC = () => {
 
   const handleVehicleChange = (newId: string) => {
     setSelectedVehicleId(newId);
-    setSearchParams({ vehicleId: newId });
+    setSearchParams({ vehicleId: newId, date: selectedDate });
+  };
+
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    if (selectedVehicleId) {
+      setSearchParams({ vehicleId: selectedVehicleId, date: newDate });
+    }
   };
 
   const handleStepForward = () => {
     if (!session) return;
+    setIsPlaying(false);
     setProgress((prev) => Math.min(Math.floor(prev) + 1, session.points.length - 1));
   };
 
   const handleStepBackward = () => {
+    setIsPlaying(false);
     setProgress((prev) => Math.max(Math.ceil(prev) - 1, 0));
   };
 
@@ -126,14 +136,36 @@ export const RoutePlaybackPage: React.FC = () => {
     setIsPlaying(false);
   };
 
+  const handlePlayPause = () => {
+    if (!session || session.points.length <= 1) return;
+    const maxIndex = session.points.length - 1;
+    // If replay reached the end, restart automatically from the beginning
+    if (!isPlaying && progress >= maxIndex) {
+      setProgress(0);
+      setIsPlaying(true);
+      return;
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   const stoppages = session?.points.filter((p) => p.stoppage) || [];
   const currentIndex = Math.min(Math.floor(progress), (session?.points.length || 1) - 1);
+
+  const formatStopDate = (timestamp?: string) => {
+    if (!timestamp) return "--:--";
+    try {
+      const d = new Date(timestamp);
+      if (isNaN(d.getTime())) return "--:--";
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "--:--";
+    }
+  };
 
   return (
     <div className="space-y-4">
       <PageHeader
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
           { label: "Vehicles", href: "/vehicles" },
           { label: "Route Playback" }
         ]}
@@ -145,7 +177,7 @@ export const RoutePlaybackPage: React.FC = () => {
               variant="outline"
               size="sm"
               leftIcon={<Navigation className="h-3.5 w-3.5" />}
-              onClick={() => navigate(`/dashboard?vehicleId=${selectedVehicleId}`)}
+              onClick={() => navigate(`/live-tracking?vehicleId=${selectedVehicleId}`)}
             >
               Live Map
             </Button>
@@ -174,7 +206,7 @@ export const RoutePlaybackPage: React.FC = () => {
             >
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.plateNumber} ({v.driver.name} - {v.makeModel})
+                  {v.plateNumber} ({v.driver?.name || "Unassigned"} - {v.makeModel})
                 </option>
               ))}
             </select>
@@ -183,7 +215,7 @@ export const RoutePlaybackPage: React.FC = () => {
           {/* Date Presets */}
           <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs">
             <button
-              onClick={() => setSelectedDate("today")}
+              onClick={() => handleDateChange("today")}
               className={`px-3 py-1 rounded-lg font-semibold transition-all ${
                 selectedDate === "today"
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
@@ -193,7 +225,7 @@ export const RoutePlaybackPage: React.FC = () => {
               Today
             </button>
             <button
-              onClick={() => setSelectedDate("yesterday")}
+              onClick={() => handleDateChange("yesterday")}
               className={`px-3 py-1 rounded-lg font-semibold transition-all ${
                 selectedDate === "yesterday"
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
@@ -208,7 +240,7 @@ export const RoutePlaybackPage: React.FC = () => {
         {session && (
           <div className="text-xs text-slate-500 font-mono flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{session.points.length} GPS Fixes Logged</span>
+            <span>{session.points.length} GPS Points Logged</span>
           </div>
         )}
       </div>
@@ -230,9 +262,11 @@ export const RoutePlaybackPage: React.FC = () => {
           </div>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
             <p className="text-[10px] font-bold text-slate-500 uppercase">Stoppages</p>
-            <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">{session.stoppageCount} Stops</p>
+            <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">
+              {stoppages.length} {stoppages.length === 1 ? "Stop" : "Stops"}
+            </p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 col-span-2 sm:col-span-1">
             <p className="text-[10px] font-bold text-slate-500 uppercase">Idle Time</p>
             <p className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{session.idleDurationMinutes} mins</p>
           </div>
@@ -250,7 +284,10 @@ export const RoutePlaybackPage: React.FC = () => {
               isPlaying={isPlaying}
               followVehicle={followVehicle}
               onToggleFollow={(val) => setFollowVehicle(val)}
-              onSelectPoint={(idx) => setProgress(idx)}
+              onSelectPoint={(idx) => {
+                setIsPlaying(false);
+                setProgress(idx);
+              }}
             />
           </div>
 
@@ -259,7 +296,7 @@ export const RoutePlaybackPage: React.FC = () => {
             progress={progress}
             isPlaying={isPlaying}
             playbackSpeed={playbackSpeed}
-            onPlayPause={() => setIsPlaying(!isPlaying)}
+            onPlayPause={handlePlayPause}
             onSeek={(val) => setProgress(val)}
             onSpeedChange={(spd) => setPlaybackSpeed(spd)}
             onStepForward={handleStepForward}
@@ -292,7 +329,12 @@ export const RoutePlaybackPage: React.FC = () => {
                 return (
                   <div
                     key={stop.id}
-                    onClick={() => ptIndex >= 0 && setProgress(ptIndex)}
+                    onClick={() => {
+                      if (ptIndex >= 0) {
+                        setIsPlaying(false);
+                        setProgress(ptIndex);
+                      }
+                    }}
                     className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
                       isSelected
                         ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 shadow-sm"
@@ -302,11 +344,11 @@ export const RoutePlaybackPage: React.FC = () => {
                     <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
                       <span>Stop #{sIdx + 1}</span>
                       <span className="font-mono text-[11px] text-slate-500">
-                        {new Date(stop.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {formatStopDate(stop.timestamp)}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                      {stop.locationName || `${stop.latitude.toFixed(4)}° N, ${stop.longitude.toFixed(4)}° E`}
+                      {(stop.locationName || `${stop.latitude.toFixed(4)}° N, ${stop.longitude.toFixed(4)}° E`).replace(/\s*Point\s*#?\d+/gi, "")}
                     </p>
                   </div>
                 );

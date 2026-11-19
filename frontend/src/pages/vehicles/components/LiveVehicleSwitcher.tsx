@@ -37,10 +37,13 @@ export const LiveVehicleSwitcher: React.FC<LiveVehicleSwitcherProps> = ({
 
   const filteredVehicles = vehicles.filter((v) => {
     const matchesStatus = statusFilter === "all" || v.status === statusFilter;
+    const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.companyName.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      (v.plateNumber && v.plateNumber.toLowerCase().includes(q)) ||
+      (v.makeModel && v.makeModel.toLowerCase().includes(q)) ||
+      (v.driver?.name && v.driver.name.toLowerCase().includes(q)) ||
+      (v.companyName && v.companyName.toLowerCase().includes(q));
     return matchesStatus && matchesSearch;
   });
 
@@ -142,7 +145,7 @@ export const LiveVehicleSwitcher: React.FC<LiveVehicleSwitcherProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by plate number, driver, or fleet partner..."
+              placeholder="Search by plate number, model, driver, or fleet partner..."
               className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -189,7 +192,7 @@ export const LiveVehicleSwitcher: React.FC<LiveVehicleSwitcherProps> = ({
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
                           <User className="h-3 w-3 shrink-0" />
-                          {vehicle.driver.name} • {vehicle.companyName}
+                          {vehicle.driver?.name || "Unassigned"} • {vehicle.companyName || "Fleet Asset"}
                         </p>
                       </div>
                     </div>

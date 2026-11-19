@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AlertTriangle,
   Lock,
@@ -32,6 +32,23 @@ export const ImmobilizeModal: React.FC<ImmobilizeModalProps> = ({
   const [reason, setReason] = useState("Suspected Theft / Hijack Protocol");
   const [confirmedSafety, setConfirmedSafety] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Sync default action and reset state when modal opens or vehicle target changes
+  useEffect(() => {
+    if (vehicle && isOpen) {
+      const isAlreadyCutOff =
+        vehicle.immobilizerState === "cut_off" || vehicle.immobilizerState === "locked";
+      setAction(isAlreadyCutOff ? "unlock" : "lock");
+      setPin("");
+      setErrorMsg("");
+      setConfirmedSafety(false);
+      setReason(
+        isAlreadyCutOff
+          ? "Routine Maintenance Lockout"
+          : "Suspected Theft / Hijack Protocol"
+      );
+    }
+  }, [isOpen, vehicle?.id, vehicle?.immobilizerState]);
 
   if (!vehicle) return null;
 
@@ -84,12 +101,14 @@ export const ImmobilizeModal: React.FC<ImmobilizeModalProps> = ({
           <div className="text-right">
             <span
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                vehicle.immobilizerState === "cut_off"
+                vehicle.immobilizerState === "cut_off" || vehicle.immobilizerState === "locked"
                   ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                   : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
               }`}
             >
-              {vehicle.immobilizerState === "cut_off" ? "CUT-OFF ACTIVE" : "ENGINE RUNNING"}
+              {vehicle.immobilizerState === "cut_off" || vehicle.immobilizerState === "locked"
+                ? "CUT-OFF ACTIVE"
+                : "ENGINE RUNNING"}
             </span>
           </div>
         </div>

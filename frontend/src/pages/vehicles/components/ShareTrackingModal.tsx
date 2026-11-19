@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Share2,
   Copy,
@@ -37,6 +37,14 @@ export const ShareTrackingModal: React.FC<ShareTrackingModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedConfig, setGeneratedConfig] = useState<ShareLinkConfig | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Reset generated link state when modal closes or target vehicle changes
+  useEffect(() => {
+    if (!isOpen) {
+      setGeneratedConfig(null);
+      setCopied(false);
+    }
+  }, [isOpen, vehicle?.id]);
 
   if (!vehicle) return null;
 

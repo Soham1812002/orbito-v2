@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ColDef } from "ag-grid-community";
 import {
@@ -33,19 +33,42 @@ import { ShareTrackingModal } from "./components/ShareTrackingModal";
 export const VehicleListPage: React.FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<VehicleCategory | "all">("all");
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter, categoryFilter]);
 
   // Modals state
   const [immobilizeTarget, setImmobilizeTarget] = useState<VehicleTelemetry | null>(null);
   const [shareTarget, setShareTarget] = useState<VehicleTelemetry | null>(null);
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const { data: vehicles = [], isLoading, refetch, isFetching } = useVehicles({
-    search,
+    search: debouncedSearch,
     status: statusFilter,
     category: categoryFilter
   });
+
+  const total = vehicles.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const paginatedVehicles = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return vehicles.slice(start, start + pageSize);
+  }, [vehicles, page, pageSize]);
 
   const { data: stats } = useFleetStats();
   const immobilizerMutation = useSendImmobilizerCommand();
@@ -53,7 +76,7 @@ export const VehicleListPage: React.FC = () => {
 
   const handleExportCsv = async () => {
     await vehiclesApi.exportVehicles({
-      search,
+      search: debouncedSearch,
       status: statusFilter,
       category: categoryFilter
     });
@@ -78,8 +101,8 @@ export const VehicleListPage: React.FC = () => {
       {
         headerName: "Vehicle / Model",
         field: "plateNumber",
-        minWidth: 200,
-        flex: 1.3,
+        minWidth: 165,
+        flex: 1.2,
         cellRenderer: (params: any) => {
           const v: VehicleTelemetry = params.data;
           if (!v) return null;
@@ -89,7 +112,16 @@ export const VehicleListPage: React.FC = () => {
                 <Car className="h-4 w-4" />
               </div>
               <TwoLineCell
-                primary={<span className="font-mono font-bold">{v.plateNumber}</span>}
+                primary={
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/live-tracking?vehicleId=${v.id}`)}
+                    className="font-mono font-bold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer text-left"
+                    title="Open in Live Tracking"
+                  >
+                    {v.plateNumber}
+                  </button>
+                }
                 secondary={v.makeModel}
               />
             </div>
@@ -99,7 +131,8 @@ export const VehicleListPage: React.FC = () => {
       {
         headerName: "Status",
         field: "status",
-        minWidth: 120,
+        minWidth: 95,
+        flex: 0.7,
         cellRenderer: (params: any) => {
           const v: VehicleTelemetry = params.data;
           if (!v) return null;
@@ -109,7 +142,8 @@ export const VehicleListPage: React.FC = () => {
       {
         headerName: "Speed",
         field: "speed",
-        minWidth: 110,
+        minWidth: 80,
+        flex: 0.6,
         cellRenderer: (params: any) => (
           <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
             {params.value} km/h
@@ -117,36 +151,42 @@ export const VehicleListPage: React.FC = () => {
         )
       },
       {
-        headerName: "Driver Details",
+        headerName: "Driver",
         field: "driver",
-        minWidth: 160,
+        minWidth: 130,
+        flex: 1.0,
         cellRenderer: (params: any) => {
           const v: VehicleTelemetry = params.data;
           if (!v) return null;
           return (
             <TwoLineCell
-              primary={v.driver.name}
-              secondary={<span className="font-mono">{v.driver.phone}</span>}
+              primary={v.driver?.name || "Unassigned"}
+              secondary={<span className="font-mono">{v.driver?.phone || "No Phone"}</span>}
             />
           );
         }
       },
       {
-        headerName: "Fuel & Battery",
+        headerName: "Fuel / Battery",
         field: "fuelPercent",
-        minWidth: 140,
+        minWidth: 110,
+        flex: 0.8,
         cellRenderer: (params: any) => {
           const v: VehicleTelemetry = params.data;
           if (!v) return null;
+          const isEv = v.category === "electric_cargo";
+          const percent = isEv ? (v.batteryPercent ?? 100) : (v.fuelPercent ?? 0);
+          const label = isEv ? "Battery" : "Fuel";
+          const barColor = isEv ? "bg-emerald-500" : "bg-blue-600";
           return (
-            <div className="space-y-1 w-24">
-              <div className="flex items-center justify-between text-2xs text-slate-500">
-                <span>Fuel {v.fuelPercent}%</span>
+            <div className="space-y-1 w-20">
+              <div className="flex items-center justify-between text-2xs text-slate-500 font-medium">
+                <span>{label} {percent}%</span>
               </div>
               <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-600 rounded-full"
-                  style={{ width: `${v.fuelPercent}%` }}
+                  className={`h-full ${barColor} rounded-full`}
+                  style={{ width: `${percent}%` }}
                 />
               </div>
             </div>
@@ -154,9 +194,10 @@ export const VehicleListPage: React.FC = () => {
         }
       },
       {
-        headerName: "Today Dist",
+        headerName: "Distance",
         field: "todayDistance",
-        minWidth: 110,
+        minWidth: 85,
+        flex: 0.6,
         cellRenderer: (params: any) => (
           <span className="font-mono font-semibold text-xs text-slate-700 dark:text-slate-300">
             {params.value} km
@@ -164,12 +205,12 @@ export const VehicleListPage: React.FC = () => {
         )
       },
       {
-        headerName: "Current Location",
+        headerName: "Location",
         field: "lastLocation",
-        minWidth: 180,
+        minWidth: 150,
         flex: 1.2,
         cellRenderer: (params: any) => (
-          <span className="text-2xs text-slate-500 truncate block">
+          <span className="text-2xs text-slate-500 truncate block" title={params.value}>
             {params.value}
           </span>
         )
@@ -177,45 +218,58 @@ export const VehicleListPage: React.FC = () => {
       {
         headerName: "Actions",
         field: "id",
-        minWidth: 160,
+        minWidth: 125,
+        flex: 0.9,
         sortable: false,
         filter: false,
         cellRenderer: (params: any) => {
           const v: VehicleTelemetry = params.data;
           if (!v) return null;
           return (
-            <div className="flex items-center gap-1 py-1">
+            <div className="flex items-center gap-1.5 py-1">
               <button
                 type="button"
-                onClick={() => navigate(`/live-tracking?vehicleId=${v.id}`)}
-                title="Track on Map"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/live-tracking?vehicleId=${v.id}`);
+                }}
+                title="Live Map Tracking"
+                className="p-1 rounded-md text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors cursor-pointer"
               >
                 <Navigation className="h-4 w-4" />
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/playback?vehicleId=${v.id}`)}
-                title="Route Replay"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/playback?vehicleId=${v.id}`);
+                }}
+                title="Route Playback"
+                className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <Clock className="h-4 w-4" />
               </button>
               <button
                 type="button"
-                onClick={() => setImmobilizeTarget(v)}
-                title="Immobilizer Relay"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShareTarget(v);
+                }}
+                title="Share Tracking Link"
+                className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <ShieldAlert className="h-4 w-4" />
+                <Share2 className="h-4 w-4" />
               </button>
               <button
                 type="button"
-                onClick={() => setShareTarget(v)}
-                title="Share Link"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImmobilizeTarget(v);
+                }}
+                title="Immobilizer Relay (Engine Cut-off)"
+                className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
               >
-                <Share2 className="h-4 w-4" />
+                <ShieldAlert className="h-4 w-4" />
               </button>
             </div>
           );
@@ -229,11 +283,11 @@ export const VehicleListPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Fleet Vehicles" }
+          { label: "Vehicles", href: "/vehicles" },
+          { label: "Vehicle Directory" }
         ]}
         title="Vehicle Assets Directory"
-        description="Monitor, audit, and dispatch commands to 25 connected logistics assets across Indian corridors."
+        description={`Monitor, audit, and dispatch commands to ${stats?.totalAssets ?? vehicles.length} connected logistics assets across Indian corridors.`}
         actions={
           <Button
             variant="primary"
@@ -275,7 +329,9 @@ export const VehicleListPage: React.FC = () => {
         <div className="rounded-2xl border border-rose-200/60 dark:border-rose-950 bg-rose-50/30 dark:bg-rose-950/20 p-4 shadow-sm">
           <p className="text-xs font-semibold text-rose-700 dark:text-rose-400 uppercase">Stopped & Inactive</p>
           <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
-            {(stats?.stopped ?? 0) + (stats?.inactive ?? 0)}
+            {stats
+              ? stats.stopped + stats.inactive
+              : vehicles.filter((v) => v.status === "stopped" || v.status === "inactive").length}
           </p>
           <p className="text-[11px] text-rose-600/70 dark:text-rose-400/70 mt-0.5">Depot parked & maintenance</p>
         </div>
@@ -285,7 +341,8 @@ export const VehicleListPage: React.FC = () => {
       <TableFilterBar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search by registration plate, driver, or operator..."
+        searchPlaceholder="Search plate, driver, or operator..."
+        searchWidthClassName="sm:w-80 lg:w-96"
         statusFilter={statusFilter}
         onStatusFilterChange={(v) => setStatusFilter(v as VehicleStatus | "all")}
         statusOptions={[
@@ -320,10 +377,19 @@ export const VehicleListPage: React.FC = () => {
       {/* Directory Table using standard AppDataTable */}
       <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable<VehicleTelemetry>
-          rowData={vehicles}
+          rowData={paginatedVehicles}
           columnDefs={columns}
           isLoading={isLoading}
-          total={vehicles.length}
+          isFetching={isFetching}
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
         />
       </div>
 

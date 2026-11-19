@@ -35,7 +35,7 @@ export interface VehicleTelemetry {
   lastUpdated: string;
   driver: DriverInfo;
   deviceImei: string;
-  immobilizerState: "unlocked" | "cut_off" | "pending";
+  immobilizerState: "unlocked" | "cut_off" | "locked" | "pending";
   todayDistance: number; // km
   telematicsVendor?: string;
   companyName: string;
@@ -92,6 +92,8 @@ export interface VehicleFilters {
   status: VehicleStatus | "all";
   category: VehicleCategory | "all";
   company: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface FleetStats {

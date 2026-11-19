@@ -16,7 +16,7 @@ export interface VehicleFilterParams {
 export class VehicleService {
   async listVehicles(params: VehicleFilterParams = {}) {
     const page = Math.max(1, Number(params.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
+    const limit = Math.min(1000, Math.max(1, Number(params.limit) || 20));
     const offset = (page - 1) * limit;
 
     const where: WhereOptions = {};
@@ -218,34 +218,46 @@ export class VehicleService {
     const baseLat = Number(vehicle.latitude) || 28.5355;
     const baseLng = Number(vehicle.longitude) || 77.391;
 
+    let resolvedDate = new Date().toISOString().split("T")[0];
+    if (date === "yesterday") {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      resolvedDate = y.toISOString().split("T")[0];
+    } else if (date && date !== "today" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      resolvedDate = date;
+    }
+
     const points = Array.from({ length: 24 }, (_, i) => {
-      const hour = 8 + Math.floor(i / 2);
-      const minute = (i % 2) * 30;
+      const totalMinutes = 8 * 60 + 30 + Math.round((i * 600) / 23);
+      const hour = Math.floor(totalMinutes / 60);
+      const minute = totalMinutes % 60;
       const speed = i === 5 || i === 12 ? 0 : 50 + (i % 5) * 8;
       return {
         id: `pt-${i}`,
-        timestamp: `${date || "2026-10-24"}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`,
+        timestamp: `${resolvedDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`,
         latitude: Number((baseLat + i * 0.025 + Math.sin(i) * 0.005).toFixed(5)),
         longitude: Number((baseLng + i * 0.035 + Math.cos(i) * 0.005).toFixed(5)),
         speed,
-        heading: (70 + i * 5) % 360,
+        heading: 52 + Math.round(i * 0.4),
         ignition: speed > 0 || i === 5,
         stoppage: speed === 0 && i === 12,
         idle: speed === 0 && i === 5,
-        locationName: `${vehicle.lastLocation} Point #${i + 1}`
+        locationName: vehicle.lastLocation || "Chakan MIDC Staging Yard, Pune"
       };
     });
+
+    const stoppageCount = points.filter((p) => p.stoppage).length;
 
     return {
       vehicleId: vehicle.id,
       vehiclePlate: vehicle.plateNumber,
-      date: date || new Date().toISOString().split("T")[0],
+      date: resolvedDate,
       startTime: "08:30 AM",
       endTime: "06:30 PM",
       totalDistance: vehicle.todayDistance || 218.4,
       maxSpeed: 82,
       avgSpeed: 54,
-      stoppageCount: 3,
+      stoppageCount,
       idleDurationMinutes: 45,
       points
     };

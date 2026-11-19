@@ -49,6 +49,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   const totalPoints = session.points.length;
   const maxIndex = Math.max(1, totalPoints - 1);
   const progressPercent = Math.min(100, Math.max(0, (progress / maxIndex) * 100));
+  const isEnded = progress >= maxIndex;
 
   // Get continuous sub-frame telemetry state
   const currentState = getInterpolatedVehicleState(session.points, progress);
@@ -60,9 +61,21 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
     if (!isoString) return "--:--";
     try {
       const d = new Date(isoString);
+      if (isNaN(d.getTime())) return "--:--";
       return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     } catch {
-      return isoString;
+      return "--:--";
+    }
+  };
+
+  const formatTimeShort = (isoString?: string, fallback?: string) => {
+    if (!isoString) return fallback || "--:--";
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return fallback || "--:--";
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return fallback || "--:--";
     }
   };
 
@@ -99,7 +112,8 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           <div className="flex items-center gap-2 text-[11px] text-slate-500">
             <MapPin className="h-3.5 w-3.5 text-slate-400" />
             <span className="truncate max-w-[280px]">
-              {currentState.locationName || currentPoint?.locationName || "Yamuna Expressway"}
+              {(currentState.locationName || currentPoint?.locationName || "Chakan MIDC Staging Yard, Pune")
+                .replace(/\s*Point\s*#?\d+/gi, "")}
             </span>
           </div>
         </div>
@@ -108,11 +122,11 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
       {/* Scrub Bar / Timeline Slider with Sub-Frame Precision */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-          <span>{formatTime(session.points[0]?.timestamp)}</span>
+          <span>{formatTimeShort(session.points[0]?.timestamp, session.startTime)}</span>
           <span className="font-semibold text-blue-600 dark:text-blue-400">
-            Fix #{Math.floor(progress) + 1} / {totalPoints} ({progressPercent.toFixed(1)}%)
+            Point {Math.floor(progress) + 1} of {totalPoints} ({Math.round(progressPercent)}%)
           </span>
-          <span>{formatTime(session.points[totalPoints - 1]?.timestamp)}</span>
+          <span>{formatTimeShort(session.points[totalPoints - 1]?.timestamp, session.endTime)}</span>
         </div>
 
         <div className="relative flex items-center group py-1">
@@ -152,11 +166,25 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
 
           <button
             onClick={onPlayPause}
-            title={isPlaying ? "Pause" : "Play"}
+            title={isPlaying ? "Pause" : isEnded ? "Replay Again from Start" : "Play"}
             className="flex h-10 px-5 items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-500/25 active:scale-95 transition-all"
           >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            <span>{isPlaying ? "Pause Replay" : "Start Replay"}</span>
+            {isPlaying ? (
+              <>
+                <Pause className="h-4 w-4" />
+                <span>Pause Replay</span>
+              </>
+            ) : isEnded ? (
+              <>
+                <RotateCcw className="h-4 w-4" />
+                <span>Replay Again</span>
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                <span>Start Replay</span>
+              </>
+            )}
           </button>
 
           <button

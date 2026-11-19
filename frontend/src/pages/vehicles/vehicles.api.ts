@@ -192,98 +192,157 @@ const FALLBACK_VEHICLES: VehicleTelemetry[] = [
   }
 ];
 
+const normalizeVehicle = (v: any): VehicleTelemetry => ({
+  ...v,
+  latitude: Number(v.latitude) || 28.6139,
+  longitude: Number(v.longitude) || 77.209,
+  heading: Number(v.heading) || 0,
+  speed: Number(v.speed) || 0,
+  fuelPercent: Number(v.fuelPercent ?? 100),
+  batteryPercent: Number(v.batteryPercent ?? 100),
+  odometer: Number(v.odometer ?? 0),
+  engineTemp: Number(v.engineTemp ?? 25),
+  todayDistance: Number(v.todayDistance ?? 0),
+  immobilizerState:
+    v.immobilizerState === "locked" || v.immobilizerState === "cut_off"
+      ? "cut_off"
+      : v.immobilizerState === "pending"
+      ? "pending"
+      : "unlocked",
+  driver: v.driver || {
+    id: "unassigned",
+    name: "Unassigned Driver",
+    phone: "",
+    licenseNumber: "N/A",
+    avatar: "NA",
+    rating: 5.0
+  }
+});
+
 export const vehiclesApi = {
   getVehicles: async (filters?: Partial<VehicleFilters>): Promise<VehicleTelemetry[]> => {
     try {
       const res = await api.get("/vehicles", { params: filters });
-      return res.data?.data || res.data;
+      const apiData = res.data?.data || res.data;
+      if (Array.isArray(apiData) && apiData.length > 0) {
+        return apiData.map(normalizeVehicle);
+      }
     } catch {
-      let list = [...FALLBACK_VEHICLES];
-      if (filters?.status && filters.status !== "all") {
-        list = list.filter((v) => v.status === filters.status);
-      }
-      if (filters?.category && filters.category !== "all") {
-        list = list.filter((v) => v.category === filters.category);
-      }
-      if (filters?.search) {
-        const q = filters.search.toLowerCase();
-        list = list.filter(
-          (v) =>
-            v.plateNumber.toLowerCase().includes(q) ||
-            v.driver.name.toLowerCase().includes(q) ||
-            v.makeModel.toLowerCase().includes(q) ||
-            v.lastLocation.toLowerCase().includes(q)
-        );
-      }
-      return list;
+      // Backend unavailable, fallback to mock data
     }
+
+    let list = FALLBACK_VEHICLES.map(normalizeVehicle);
+    if (filters?.status && filters.status !== "all") {
+      list = list.filter((v) => v.status === filters.status);
+    }
+    if (filters?.category && filters.category !== "all") {
+      list = list.filter((v) => v.category === filters.category);
+    }
+    if (filters?.search) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(
+        (v) =>
+          (v.plateNumber && v.plateNumber.toLowerCase().includes(q)) ||
+          (v.driver?.name && v.driver.name.toLowerCase().includes(q)) ||
+          (v.makeModel && v.makeModel.toLowerCase().includes(q)) ||
+          (v.lastLocation && v.lastLocation.toLowerCase().includes(q))
+      );
+    }
+    return list;
   },
 
   getVehicleById: async (id: string): Promise<VehicleTelemetry> => {
     try {
       const res = await api.get(`/vehicles/${id}`);
-      return res.data?.data || res.data;
+      const apiData = res.data?.data || res.data;
+      if (apiData && apiData.id) {
+        return normalizeVehicle(apiData);
+      }
     } catch {
-      const found = FALLBACK_VEHICLES.find((v) => v.id === id);
-      if (!found) throw new Error("Vehicle not found");
-      return found;
+      // Fallback
     }
+    const found = FALLBACK_VEHICLES.find((v) => v.id === id) || FALLBACK_VEHICLES[0];
+    return normalizeVehicle(found);
   },
 
   getFleetStats: async (): Promise<FleetStats> => {
     try {
       const res = await api.get("/vehicles/stats");
-      return res.data?.data || res.data;
+      const apiData = res.data?.data || res.data;
+      if (apiData && apiData.totalAssets > 0) {
+        return apiData;
+      }
     } catch {
-      return {
-        totalAssets: FALLBACK_VEHICLES.length,
-        moving: FALLBACK_VEHICLES.filter((v) => v.status === "moving").length,
-        idling: FALLBACK_VEHICLES.filter((v) => v.status === "idling").length,
-        stopped: FALLBACK_VEHICLES.filter((v) => v.status === "stopped").length,
-        inactive: FALLBACK_VEHICLES.filter((v) => v.status === "inactive").length
-      };
+      // Fallback
     }
+
+    return {
+      totalAssets: FALLBACK_VEHICLES.length,
+      moving: FALLBACK_VEHICLES.filter((v) => v.status === "moving").length,
+      idling: FALLBACK_VEHICLES.filter((v) => v.status === "idling").length,
+      stopped: FALLBACK_VEHICLES.filter((v) => v.status === "stopped").length,
+      inactive: FALLBACK_VEHICLES.filter((v) => v.status === "inactive").length
+    };
   },
 
   getPlaybackSession: async (vehicleId: string, date: string): Promise<PlaybackSession> => {
     try {
       const res = await api.get(`/vehicles/${vehicleId}/playback`, { params: { date } });
-      return res.data?.data || res.data;
+      const apiData = res.data?.data || res.data;
+      if (apiData && Array.isArray(apiData.points) && apiData.points.length > 0) {
+        return apiData;
+      }
     } catch {
-      const baseLat = 28.5355;
-      const baseLng = 77.391;
-      const points = Array.from({ length: 24 }, (_, i) => {
-        const hour = 8 + Math.floor(i / 2);
-        const minute = (i % 2) * 30;
-        const speed = i === 5 || i === 12 ? 0 : 50 + (i % 5) * 8;
-        return {
-          id: `pt-${i}`,
-          timestamp: `2026-10-24T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`,
-          latitude: Number((baseLat + i * 0.025 + Math.sin(i) * 0.005).toFixed(5)),
-          longitude: Number((baseLng + i * 0.035 + Math.cos(i) * 0.005).toFixed(5)),
-          speed,
-          heading: (70 + i * 5) % 360,
-          ignition: speed > 0 || i === 5,
-          stoppage: speed === 0 && i === 12,
-          idle: speed === 0 && i === 5,
-          locationName: `Yamuna Expressway KM ${i * 8 + 12}`
-        };
-      });
-
-      return {
-        vehicleId,
-        vehiclePlate: "DL 01 CA 9876",
-        date: date || "2026-10-24",
-        startTime: "08:30 AM",
-        endTime: "06:30 PM",
-        totalDistance: 218.4,
-        maxSpeed: 82,
-        avgSpeed: 54,
-        stoppageCount: 3,
-        idleDurationMinutes: 45,
-        points
-      };
+      // Fallback to mock session
     }
+
+    const matchedVehicle = FALLBACK_VEHICLES.find((v) => v.id === vehicleId) || FALLBACK_VEHICLES[0];
+    const baseLat = matchedVehicle?.latitude || 28.5355;
+    const baseLng = matchedVehicle?.longitude || 77.391;
+
+    let resolvedDate = new Date().toISOString().split("T")[0];
+    if (date === "yesterday") {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      resolvedDate = y.toISOString().split("T")[0];
+    } else if (date && date !== "today" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      resolvedDate = date;
+    }
+
+    const points = Array.from({ length: 24 }, (_, i) => {
+      const totalMinutes = 8 * 60 + 30 + Math.round((i * 600) / 23);
+      const hour = Math.floor(totalMinutes / 60);
+      const minute = totalMinutes % 60;
+      const speed = i === 5 || i === 12 ? 0 : 50 + (i % 5) * 8;
+      return {
+        id: `pt-${i}`,
+        timestamp: `${resolvedDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`,
+        latitude: Number((baseLat + i * 0.025 + Math.sin(i) * 0.005).toFixed(5)),
+        longitude: Number((baseLng + i * 0.035 + Math.cos(i) * 0.005).toFixed(5)),
+        speed,
+        heading: (70 + i * 5) % 360,
+        ignition: speed > 0 || i === 5,
+        stoppage: speed === 0 && i === 12,
+        idle: speed === 0 && i === 5,
+        locationName: matchedVehicle?.lastLocation || "Chakan MIDC Staging Yard, Pune"
+      };
+    });
+
+    const stoppageCount = points.filter((p) => p.stoppage).length;
+
+    return {
+      vehicleId: vehicleId || matchedVehicle.id,
+      vehiclePlate: matchedVehicle.plateNumber,
+      date: resolvedDate,
+      startTime: "08:30 AM",
+      endTime: "06:30 PM",
+      totalDistance: 218.4,
+      maxSpeed: 82,
+      avgSpeed: 54,
+      stoppageCount,
+      idleDurationMinutes: 45,
+      points
+    };
   },
 
   dispatchImmobilizer: async (
@@ -326,7 +385,7 @@ export const vehiclesApi = {
       const rows = list
         .map(
           (v) =>
-            `"${v.plateNumber}","${v.makeModel}","${v.category}","${v.status}",${v.speed},"${v.driver.name}","${v.driver.phone}",${v.todayDistance},"${v.lastLocation}"`
+            `"${v.plateNumber}","${v.makeModel}","${v.category}","${v.status}",${v.speed},"${v.driver?.name || "Unassigned"}","${v.driver?.phone || "N/A"}",${v.todayDistance},"${v.lastLocation}"`
         )
         .join("\n");
       const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
