@@ -62,9 +62,12 @@ export class AppConfigController {
   static async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = String(req.params.id);
-      const result = await AppConfigService.delete(id);
+      const cascade = req.query.cascade === "true" || req.body?.cascade === true;
+      const result = await AppConfigService.delete(id, cascade);
       res.status(200).json({
-        message: "App configuration item deleted successfully",
+        message: result.cascaded
+          ? "Item and all linked entities safely archived"
+          : "App configuration item deleted successfully",
         result
       });
     } catch (err) {

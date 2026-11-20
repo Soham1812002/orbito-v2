@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -18,6 +18,7 @@ import { AppDataTable, StatusBadgeCell } from "@/components/common/AppDataTable"
 import { TableFilterBar } from "@/components/common/TableFilterBar";
 import type { ColDef } from "ag-grid-community";
 import { showToast } from "@/lib/toast";
+import { exportToCsv } from "@/utils/streamingExport";
 import { systemConfigApi, SystemConfigItem } from "@/api/systemConfig.api";
 
 export interface ConfigFieldDef {
@@ -50,6 +51,8 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Fetch real data from PostgreSQL via backend REST API
   const {
@@ -60,7 +63,9 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
   } = useQuery({
     queryKey: ["system-config", config.moduleKey],
     queryFn: ({ signal }) => systemConfigApi.getConfigs(config.moduleKey, signal),
-    staleTime: 30000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData
   });
 
   // Modal State
@@ -133,6 +138,17 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
     [items]
   );
   const inactiveCount = items.length - activeCount;
+
+  // Reset to first page when search or status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, page, pageSize]);
 
   const handleOpenCreate = () => {
     const initialForm: Record<string, any> = { isActive: true };
@@ -254,22 +270,11 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
       showToast.error("No records to export");
       return;
     }
-    const headers = config.columns.map((c) => `"${c.label.replace(/"/g, '""')}"`).join(",");
+    const headers = config.columns.map((c) => c.label);
     const rows = filteredItems.map((item) =>
-      config.columns
-        .map((c) => `"${String(item[c.key] ?? "").replace(/"/g, '""')}"`)
-        .join(",")
+      config.columns.map((c) => item[c.key])
     );
-    const csvContent = [headers, ...rows].join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${config.moduleKey}-export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    exportToCsv(`${config.moduleKey}-export`, headers, rows);
     showToast.success("Export downloaded successfully!");
   };
 
@@ -343,30 +348,73 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
   return (
     <div className="space-y-6">
       <PageHeader
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "System Config", href: "/system-config" },
-          { label: config.title }
-        ]}
         title={config.title}
         description={config.description}
       />
 
-      {/* Metric Counters Strip */}
+      {/* Metric Counters Strip with Smooth Cross-Fade */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Records</p>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-1">{items.length}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-slate-200/80 dark:bg-slate-700/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-slate-900 dark:text-white transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {items.length}
+            </h3>
+          </div>
           <span className="text-[10px] text-blue-500 font-medium mt-0.5 inline-block">Database Persisted</span>
         </div>
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active</p>
-          <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{activeCount}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-emerald-100/80 dark:bg-emerald-950/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-emerald-600 dark:text-emerald-400 transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {activeCount}
+            </h3>
+          </div>
           <span className="text-[10px] text-emerald-500 font-medium mt-0.5 inline-block">Operational</span>
         </div>
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Inactive</p>
-          <h3 className="text-xl font-bold text-slate-400 mt-1">{inactiveCount}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-slate-200/80 dark:bg-slate-700/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-slate-400 transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {inactiveCount}
+            </h3>
+          </div>
           <span className="text-[10px] text-slate-400 font-medium mt-0.5 inline-block">Disabled / Paused</span>
         </div>
         <div className="panel-card p-4">
@@ -395,10 +443,18 @@ export const ConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ con
       {/* Main Data Table with Standard Panel-Card Padding */}
       <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable<SystemConfigItem>
-          rowData={filteredItems}
+          rowData={paginatedItems}
           columnDefs={gridColumns}
           isLoading={isLoading}
           total={filteredItems.length}
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
         />
       </div>
 

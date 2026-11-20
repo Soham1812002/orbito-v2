@@ -758,11 +758,18 @@ export const usersApi = {
   },
 
   getCompanies: async (): Promise<string[]> => {
-    return [
-      "All Companies",
-      "InOrbit Fleet Logistics",
-      "Apex Transport & Cargo",
-      "Velocity Track Ltd"
-    ];
+    try {
+      const res = await apiClient.get("/app-configs/companies");
+      const list = res.data?.items || res.data?.result || [];
+      const names = list.map((c: any) => c.name || c.companyName).filter(Boolean);
+      return ["All Companies", ...(Array.from(new Set(names)) as string[])];
+    } catch {
+      return [
+        "All Companies",
+        "Apex Logistics India Pvt Ltd",
+        "TransGlobe Cold Chain Corp",
+        "SafeHaul Petroleum Carriers"
+      ];
+    }
   }
 };

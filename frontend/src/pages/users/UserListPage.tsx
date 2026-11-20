@@ -27,6 +27,7 @@ import { useAppSelector } from "@/redux/hooks";
 import { User } from "@/types/users.types";
 import { usersApi } from "@/api/users.api";
 import { showToast } from "@/lib/toast";
+import { StatusBadge } from "@/components/common/StatusBadge";
 
 export const UserListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -225,20 +226,9 @@ const columns = useMemo<ColDef<any>[]>(
       field: "isActive",
       minWidth: 110,
       sortable: false,
-      cellRenderer: (params: any) => {
-        const active = params.value;
-        return active ? (
-          <div className="h-full flex items-center gap-1.5 font-medium text-xs text-emerald-600 dark:text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 shadow-xs" />
-            Active
-          </div>
-        ) : (
-          <div className="h-full flex items-center gap-1.5 font-medium text-xs text-amber-600 dark:text-amber-400">
-            <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
-            Suspended
-          </div>
-        );
-      }
+      cellRenderer: (params: any) => (
+        <StatusBadge status={params.value ? "active" : "paused"} label={params.value ? "Active" : "Suspended"} />
+      )
     },
     {
       headerName: "Actions",

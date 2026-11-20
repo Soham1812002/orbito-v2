@@ -16,6 +16,7 @@ import { Select } from "@/components/common/Select";
 import { useAlertLogs, useAcknowledgeAlert } from "./alerts.queries";
 import { getAlertLogColumns } from "./alerts.columns";
 import { AlertLog } from "./alerts.types";
+import { exportToCsv } from "@/utils/streamingExport";
 
 export const AlertIncidentListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -64,26 +65,19 @@ export const AlertIncidentListPage: React.FC = () => {
     if (logs.length === 0) return;
     const headers = ["Vehicle Plate", "Company", "Branch", "Alert Name", "Alert Type", "Severity", "Trigger Value", "Location", "Coordinates", "Timestamp", "Status"];
     const rows = logs.map((l) => [
-      `"${l.plateNumber}"`,
-      `"${l.companyName}"`,
-      `"${l.branchName}"`,
-      `"${l.alertName}"`,
-      `"${l.alertType}"`,
-      `"${l.severity.toUpperCase()}"`,
-      `"${l.triggerValue || ""}"`,
-      `"${l.address.replace(/"/g, '""')}"`,
-      `"${l.latitude}, ${l.longitude}"`,
-      `"${l.createdAt}"`,
-      `"${l.status.toUpperCase()}"`
+      l.plateNumber,
+      l.companyName,
+      l.branchName,
+      l.alertName,
+      l.alertType,
+      l.severity.toUpperCase(),
+      l.triggerValue || "",
+      l.address,
+      `${l.latitude}, ${l.longitude}`,
+      l.createdAt,
+      l.status.toUpperCase()
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `fleet_alerts_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCsv("fleet_alerts_report", headers, rows);
   };
 
   return (

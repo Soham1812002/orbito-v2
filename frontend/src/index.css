@@ -274,3 +274,8 @@
   display: flex !important;
   align-items: center !important;
 }
+
+/* Reserve scrollbar gutter so page layout never shifts between full and empty tables */
+html {
+  scrollbar-gutter: stable;
+}

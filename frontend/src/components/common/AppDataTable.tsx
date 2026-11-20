@@ -141,10 +141,16 @@ export function AppDataTable<T = any>({
       {/* Pagination Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 py-1 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-2">
-          <span>
-            Showing <strong className="text-slate-900 dark:text-slate-200">{from}</strong> to{" "}
-            <strong className="text-slate-900 dark:text-slate-200">{to}</strong> of{" "}
-            <strong className="text-slate-900 dark:text-slate-200">{total}</strong> total entries
+          <span className="transition-opacity duration-200">
+            {isLoading ? (
+              <span className="text-slate-400">Loading records...</span>
+            ) : (
+              <>
+                Showing <strong className="text-slate-900 dark:text-slate-200">{from}</strong> to{" "}
+                <strong className="text-slate-900 dark:text-slate-200">{to}</strong> of{" "}
+                <strong className="text-slate-900 dark:text-slate-200">{total}</strong> total entries
+              </>
+            )}
           </span>
           {onPageSizeChange && (
             <div className="flex items-center gap-1.5 ml-4">

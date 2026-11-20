@@ -391,10 +391,10 @@ export const reportsApi = {
     try {
       const response = await apiClient.get("/reports/scheduled-reports", { signal });
       if (response.data?.result) return response.data.result;
+      if (response.data?.items) return response.data;
     } catch {
       // Fallback
     }
-    await simulateLatency();
     return { kpis: mockScheduledReportsKpis, items: mockScheduledReports };
   },
 
@@ -402,27 +402,20 @@ export const reportsApi = {
   createScheduledReport: async (
     payload: Partial<ScheduledReportItem>
   ): Promise<ScheduledReportItem> => {
-    try {
-      const response = await apiClient.post("/reports/scheduled-reports", payload);
-      if (response.data?.result) return response.data.result;
-    } catch {
-      // Fallback
-    }
-    await simulateLatency();
-    return {
-      id: `sched-${Date.now()}`,
-      scheduleName: payload.scheduleName || "Untitled Schedule",
-      reportType: payload.reportType || "Travel Summary",
-      company: payload.company || "Apex Logistics",
-      branch: payload.branch || "All Branches",
-      vehicleScope: payload.vehicleScope || "All active vehicles (48)",
-      frequency: payload.frequency || "Daily",
-      fileFormat: payload.fileFormat || "Excel (.xlsx)",
-      nextDelivery: "Tomorrow at 07:00 AM",
-      recipients: payload.recipients || ["fleet-ops@apexlogistics.in"],
-      isActive: true,
-      deliveryStatus: "Active"
-    };
+    const response = await apiClient.post("/reports/scheduled-reports", payload);
+    return response.data?.result || response.data;
+  },
+
+  // Toggle Scheduled Report Status
+  toggleScheduledReport: async (id: string): Promise<{ id: string; isActive: boolean }> => {
+    const response = await apiClient.patch(`/reports/scheduled-reports/${id}/toggle`);
+    return response.data?.result || response.data;
+  },
+
+  // Delete Scheduled Report
+  deleteScheduledReport: async (id: string): Promise<{ id: string; deleted: boolean }> => {
+    const response = await apiClient.delete(`/reports/scheduled-reports/${id}`);
+    return response.data?.result || response.data;
   },
 
   // 22. Vehicle Activation Report

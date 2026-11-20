@@ -24,6 +24,7 @@ import { useUserGroupList, useDeleteUserGroup, useCompaniesList } from "@/querie
 import { UserGroup } from "@/types/users.types";
 import { usersApi } from "@/api/users.api";
 import { showToast } from "@/lib/toast";
+import { StatusBadge } from "@/components/common/StatusBadge";
 
 export const UserGroupListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -183,19 +184,9 @@ export const UserGroupListPage: React.FC = () => {
         field: "isActive",
         minWidth: 110,
         sortable: false,
-        cellRenderer: (params: any) => {
-          return params.value ? (
-            <div className="h-full flex items-center gap-1.5 font-medium text-xs text-emerald-600 dark:text-emerald-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 shadow-xs" />
-              Active
-            </div>
-          ) : (
-            <div className="h-full flex items-center gap-1.5 font-medium text-xs text-slate-500 dark:text-slate-400">
-              <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />
-              Inactive
-            </div>
-          );
-        }
+        cellRenderer: (params: any) => (
+          <StatusBadge status={Boolean(params.value)} />
+        )
       },
       {
         headerName: "Actions",

@@ -1,9 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Edit2,
   Trash2,
-  Copy
+  Copy,
+  AlertCircle,
+  ArrowRight,
+  RefreshCw,
+  Layers,
+  ShieldAlert,
+  Building2
 } from "lucide-react";
 import { ColDef } from "ag-grid-community";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -12,14 +19,27 @@ import { Modal } from "@/components/common/Modal";
 import { AppDataTable, StatusBadgeCell } from "@/components/common/AppDataTable";
 import { TableFilterBar } from "@/components/common/TableFilterBar";
 import { showToast } from "@/lib/toast";
+import { exportToCsv } from "@/utils/streamingExport";
 import { appConfigApi, AppConfigItem } from "@/api/appConfig.api";
 import { ConfigEntityConfig } from "@/types/config.types";
 import { AppConfigFormModal } from "./AppConfigFormModal";
 
 export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ config }) => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // Sync search filter with URL search param if present (e.g. from Go to Branches)
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
 
   // Fetch real data from PostgreSQL via backend REST API
   const {
@@ -41,6 +61,53 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
   // Delete State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<AppConfigItem | null>(null);
+
+  // Child dependency navigation target with pre-filtered search
+  const childTarget = useMemo(() => {
+    const compName = itemToDelete?.name || itemToDelete?.companyName || "";
+    if (config.moduleKey === "companies") {
+      const searchParam = compName ? `?search=${encodeURIComponent(compName)}` : "";
+      return {
+        childName: "Branches",
+        label: "View Branches",
+        path: `/app-config/branches${searchParam}`,
+        manageTitle: "Manage Branches",
+        manageDesc: "Review or move branches individually.",
+        cascadeTitle: "Delete Company & Branches",
+        cascadeDesc: "This will also delete all linked branches.",
+        cascadeBtn: "Delete All"
+      };
+    }
+    if (config.moduleKey === "branches") {
+      const branchName = itemToDelete?.name || itemToDelete?.branchName || "";
+      const searchParam = branchName ? `?search=${encodeURIComponent(branchName)}` : "";
+      return {
+        childName: "Vehicles",
+        label: "View Vehicles",
+        path: `/app-config/vehicles${searchParam}`,
+        manageTitle: "Manage Vehicles",
+        manageDesc: "Review or move vehicles individually.",
+        cascadeTitle: "Delete Branch & Vehicles",
+        cascadeDesc: "This will also delete all linked vehicles.",
+        cascadeBtn: "Delete All"
+      };
+    }
+    if (config.moduleKey === "vehicles") {
+      const plate = itemToDelete?.plateNumber || itemToDelete?.vehiclePlate || "";
+      const searchParam = plate ? `?search=${encodeURIComponent(plate)}` : "";
+      return {
+        childName: "Devices",
+        label: "View Devices",
+        path: `/app-config/added-devices${searchParam}`,
+        manageTitle: "Manage Devices",
+        manageDesc: "Review or detach devices individually.",
+        cascadeTitle: "Delete Vehicle & Devices",
+        cascadeDesc: "This will also detach attached GPS device.",
+        cascadeBtn: "Delete Vehicle"
+      };
+    }
+    return null;
+  }, [config.moduleKey, itemToDelete]);
 
   // Mutations
   const createMutation = useMutation({
@@ -71,15 +138,26 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => appConfigApi.deleteConfig(id),
-    onSuccess: () => {
+    mutationFn: ({ id, cascade = false }: { id: string; cascade?: boolean }) =>
+      appConfigApi.deleteConfig(id, cascade),
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["app-config", config.moduleKey] });
       queryClient.invalidateQueries({ queryKey: ["app-config", "stats"] });
-      showToast.success(`${config.singularTitle} deleted successfully!`);
+      if (data?.cascaded) {
+        showToast.success(
+          `${config.singularTitle} and all linked items were safely deleted!`
+        );
+      } else {
+        showToast.success(`${config.singularTitle} deleted successfully!`);
+      }
       setDeleteModalOpen(false);
     },
     onError: (err: any) => {
-      showToast.error(err.response?.data?.message || `Failed to delete ${config.singularTitle}`);
+      // Do not duplicate red toast error when modal already displays the hierarchy blocked choices
+      if (!childTarget) {
+        const msg = err.response?.data?.message || err.message || `Failed to delete ${config.singularTitle}`;
+        showToast.error(msg);
+      }
     }
   });
 
@@ -102,6 +180,17 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
     });
   }, [items, searchTerm, statusFilter]);
 
+  // Reset to first page when search or status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, page, pageSize]);
+
   // CSV Export
   const handleExportCsv = () => {
     if (filteredItems.length === 0) {
@@ -110,18 +199,8 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
     }
     const headers = config.columns.map((c) => c.label);
     const keys = config.columns.map((c) => c.key);
-    const rows = filteredItems.map((item) =>
-      keys.map((k) => `"${String(item[k] ?? "").replace(/"/g, '""')}"`).join(",")
-    );
-    const csvContent = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `${config.moduleKey}_export_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const rows = filteredItems.map((item) => keys.map((k) => item[k]));
+    exportToCsv(`${config.moduleKey}_export`, headers, rows);
     showToast.success("Export completed!");
   };
 
@@ -237,6 +316,7 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
             <button
               type="button"
               onClick={() => {
+                deleteMutation.reset();
                 setItemToDelete(item);
                 setDeleteModalOpen(true);
               }}
@@ -279,10 +359,18 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
       {/* AG Grid Data Table Container with Standard Panel-Card Padding */}
       <div className="panel-card p-4 sm:p-5 overflow-hidden">
         <AppDataTable
-          rowData={filteredItems}
+          rowData={paginatedItems}
           columnDefs={gridColumns}
           isLoading={isLoading}
           total={filteredItems.length}
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
           height="520px"
         />
       </div>
@@ -301,30 +389,209 @@ export const AppConfigEntityPage: React.FC<{ config: ConfigEntityConfig }> = ({ 
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        title={`Delete ${config.singularTitle}`}
-        maxWidth="md"
+        onClose={() => {
+          deleteMutation.reset();
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        title={
+          deleteMutation.isError && childTarget ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <span className="text-base font-bold text-slate-900 dark:text-slate-100">
+                Cannot Delete {config.singularTitle}
+              </span>
+            </div>
+          ) : (
+            `Delete ${config.singularTitle}`
+          )
+        }
+        maxWidth="lg"
       >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Are you sure you want to delete this {config.singularTitle.toLowerCase()}? This action will safely archive the record and unbind active linkages.
-          </p>
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-[#1D293D]">
-            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)} disabled={deleteMutation.isPending}>
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              isLoading={deleteMutation.isPending}
-              onClick={() => {
-                if (itemToDelete?.id) {
-                  deleteMutation.mutate(itemToDelete.id);
-                }
-              }}
-            >
-              Confirm Delete
-            </Button>
+        <div className="space-y-3.5 pt-1">
+          {/* Entity Summary Card (Light Blue Tint with Building Icon) */}
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/50 dark:bg-slate-900/60 border border-blue-100/70 dark:border-slate-800">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {itemToDelete?.name || itemToDelete?.companyName || itemToDelete?.plateNumber || config.singularTitle}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                  {itemToDelete?.code || itemToDelete?.city || itemToDelete?.vehicleType || itemToDelete?.imei || `ID: ${itemToDelete?.id?.slice(0, 8)}...`}
+                </p>
+              </div>
+            </div>
+            {itemToDelete?.status && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {itemToDelete.status}
+              </span>
+            )}
           </div>
+
+          {deleteMutation.isError && childTarget ? (
+            /* Premium Side-by-Side Two-Card Choice Layout when Blocked */
+            <div className="space-y-3.5">
+              {/* Warning Banner */}
+              {(() => {
+                const rawMsg =
+                  (deleteMutation.error as any)?.response?.data?.message ||
+                  (deleteMutation.error as any)?.message ||
+                  "";
+                const match = rawMsg.match(/(\d+)\s+(branch|branches|vehicle|vehicles|device|devices)/i);
+                const count = match ? match[1] : "";
+
+                return (
+                  <div className="rounded-2xl border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 p-3 px-3.5 flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 font-bold text-xs shadow-xs">
+                      !
+                    </div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      This {config.singularTitle.toLowerCase()} has{" "}
+                      {count ? (
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">{count}</span>
+                      ) : null}{" "}
+                      linked {childTarget.childName.toLowerCase()}.
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Side-by-Side Action Cards (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Left Card: Manage Branches */}
+                <div className="rounded-2xl border border-blue-200/80 dark:border-blue-900/50 bg-blue-50/40 dark:bg-slate-900/70 p-4 flex flex-col justify-between">
+                  <div className="space-y-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {childTarget.manageTitle}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1">
+                        {childTarget.manageDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-3.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                      onClick={() => {
+                        deleteMutation.reset();
+                        setDeleteModalOpen(false);
+                        navigate(childTarget.path);
+                      }}
+                      className="w-full justify-center bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium"
+                    >
+                      {childTarget.label}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right Card: Delete Company & Branches */}
+                <div className="rounded-2xl border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/40 dark:bg-slate-900/70 p-4 flex flex-col justify-between">
+                  <div className="space-y-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {childTarget.cascadeTitle}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1">
+                        {childTarget.cascadeDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-3.5">
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                      isLoading={deleteMutation.isPending}
+                      onClick={() => {
+                        if (itemToDelete?.id) {
+                          deleteMutation.mutate({ id: itemToDelete.id, cascade: true });
+                        }
+                      }}
+                      className="w-full justify-center shadow-xs font-medium"
+                    >
+                      {childTarget.cascadeBtn}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Centered Cancel Link */}
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteMutation.reset();
+                    setDeleteModalOpen(false);
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                >
+                  Cancel and Keep Everything
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Normal Delete Confirmation (No Hierarchy Conflict) */
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Are you sure you want to delete this {config.singularTitle.toLowerCase()}? This record will be safely soft-deleted from the active fleet.
+              </p>
+
+              {deleteMutation.isError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50/80 dark:border-rose-900/50 dark:bg-rose-950/40 p-3.5 space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                    <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+                      {(deleteMutation.error as any)?.response?.data?.message ||
+                        (deleteMutation.error as any)?.message ||
+                        `Failed to delete ${config.singularTitle.toLowerCase()}.`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-[#1D293D]">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    deleteMutation.reset();
+                    setDeleteModalOpen(false);
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  isLoading={deleteMutation.isPending}
+                  onClick={() => {
+                    if (itemToDelete?.id) {
+                      deleteMutation.mutate({ id: itemToDelete.id, cascade: false });
+                    }
+                  }}
+                >
+                  Confirm Delete
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

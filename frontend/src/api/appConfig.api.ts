@@ -36,10 +36,10 @@ export const appConfigApi = {
       if (Array.isArray(response.data?.items)) {
         return response.data.items;
       }
+      return [];
     } catch {
-      // Graceful fallback
+      return [];
     }
-    return [];
   },
 
   getConfigById: async (id: string, signal?: AbortSignal): Promise<AppConfigItem> => {
@@ -56,49 +56,29 @@ export const appConfigApi = {
     moduleKey: string,
     payload: Record<string, any>
   ): Promise<AppConfigItem> => {
-    try {
-      const response = await apiClient.post(`/app-configs/${moduleKey}`, payload);
-      if (response.data?.result) return response.data.result;
-    } catch {
-      // Graceful fallback
-    }
-    return { id: `cfg-${Date.now()}`, ...payload };
+    const response = await apiClient.post(`/app-configs/${moduleKey}`, payload);
+    return response.data?.result || response.data;
   },
 
   updateConfig: async (
     id: string,
     payload: Record<string, any>
   ): Promise<AppConfigItem> => {
-    try {
-      const response = await apiClient.put(`/app-configs/${id}`, payload);
-      if (response.data?.result) return response.data.result;
-    } catch {
-      // Graceful fallback
-    }
-    return { id, ...payload };
+    const response = await apiClient.put(`/app-configs/${id}`, payload);
+    return response.data?.result || response.data;
   },
 
-  deleteConfig: async (id: string): Promise<{ id: string }> => {
-    try {
-      const response = await apiClient.delete(`/app-configs/${id}`);
-      if (response.data?.result) return response.data.result;
-    } catch {
-      // Graceful fallback
-    }
-    return { id };
+  deleteConfig: async (id: string, cascade: boolean = false): Promise<{ id: string; cascaded?: boolean }> => {
+    const response = await apiClient.delete(`/app-configs/${id}`, { params: { cascade } });
+    return response.data?.result || response.data || { id };
   },
 
   bulkImport: async (
     moduleKey: string,
     items: Record<string, any>[]
   ): Promise<{ count: number; items: any[] }> => {
-    try {
-      const response = await apiClient.post(`/app-configs/${moduleKey}/bulk`, { items });
-      if (response.data?.result) return response.data.result;
-    } catch {
-      // Graceful fallback
-    }
-    return { count: items.length, items };
+    const response = await apiClient.post(`/app-configs/${moduleKey}/bulk`, { items });
+    return response.data?.result || response.data;
   },
 
   archiveDecommission: async (payload: {
@@ -109,13 +89,8 @@ export const appConfigApi = {
     notes?: string;
     operatorName?: string;
   }): Promise<{ success: boolean; archiveId: string; entityId: string }> => {
-    try {
-      const response = await apiClient.post("/app-configs/decommission/archive", payload);
-      if (response.data?.result) return response.data.result;
-    } catch {
-      // Graceful fallback
-    }
-    return { success: true, archiveId: `arc-${Date.now()}`, entityId: payload.entityId };
+    const response = await apiClient.post("/app-configs/decommission/archive", payload);
+    return response.data?.result || response.data;
   },
 
   getStats: async (signal?: AbortSignal): Promise<AppConfigStats> => {
