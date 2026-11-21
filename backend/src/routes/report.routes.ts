@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { ReportController } from "../controllers/report.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
+import { checkPermissions } from "../middlewares/rbac.middleware.js";
+import { PERMISSIONS } from "../utils/constants.js";
 
 const router = Router();
 
@@ -51,9 +53,21 @@ router.get("/system-log", ReportController.getSystemLogs);
 
 // Scheduled Automated Reports
 router.get("/scheduled-reports", ReportController.getScheduledReports);
-router.post("/scheduled-reports", ReportController.createScheduledReport);
-router.patch("/scheduled-reports/:id/toggle", ReportController.toggleScheduledReport);
-router.delete("/scheduled-reports/:id", ReportController.deleteScheduledReport);
+router.post(
+  "/scheduled-reports",
+  checkPermissions([PERMISSIONS.MANAGE_APP_CONFIG]),
+  ReportController.createScheduledReport
+);
+router.patch(
+  "/scheduled-reports/:id/toggle",
+  checkPermissions([PERMISSIONS.MANAGE_APP_CONFIG]),
+  ReportController.toggleScheduledReport
+);
+router.delete(
+  "/scheduled-reports/:id",
+  checkPermissions([PERMISSIONS.MANAGE_APP_CONFIG]),
+  ReportController.deleteScheduledReport
+);
 
 // Vehicle Activation Reports
 router.get("/vehicle-activation", ReportController.getVehicleActivation);

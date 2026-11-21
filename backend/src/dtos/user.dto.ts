@@ -51,7 +51,7 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  groupId?: string;
+  groupId?: string | null;
 
   @IsOptional()
   @IsString()
@@ -135,7 +135,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  groupId?: string;
+  groupId?: string | null;
 
   @IsOptional()
   @IsString()

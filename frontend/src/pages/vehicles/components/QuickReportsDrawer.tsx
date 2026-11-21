@@ -89,7 +89,7 @@ export const QuickReportsDrawer: React.FC<QuickReportsDrawerProps> = ({
     showToast.info(`Opening ${item.title} for ${vehicle.plateNumber}`);
     onClose();
     if (item.isDynamicDetail) {
-      navigate(`${item.path}/${encodeURIComponent(vehicle.plateNumber)}`);
+      navigate(`${item.path}/${encodeURIComponent(vehicle.id || vehicle.plateNumber)}`);
     } else {
       navigate(`${item.path}?vehicle=${encodeURIComponent(vehicle.plateNumber)}`);
     }

@@ -244,37 +244,76 @@ export class AppConfigService {
       }
     }
 
-    // 2. Branch Deletion Guard: Block if active vehicles exist under this branch
+    // 2. Branch Deletion Guard: Block if active vehicles exist under this branch (scoped to owning company)
     if (normalizedKey === "branches" || normalizedKey === "branch") {
       const branchName = data?.name || data?.branchName || "";
       const branchCode = data?.code || "";
-      const targets = [id, branchName, branchCode].filter(Boolean);
+      const branchCompany = data?.companyId || data?.company || data?.companyName || "";
+      const companyTargets = [branchCompany].filter(Boolean);
+      const nameTargets = [branchName, branchCode].filter(Boolean);
+
+      const branchUuidMatchConditions = [
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
+          id
+        ),
+        sequelize.where(
+          sequelize.cast(sequelize.col("data"), "text"),
+          { [Op.iLike]: `%"branchId": "${id}"%` }
+        ),
+        sequelize.where(
+          sequelize.cast(sequelize.col("data"), "text"),
+          { [Op.iLike]: `%"branchId":"${id}"%` }
+        )
+      ];
+
+      const branchNameMatchConditions = nameTargets.flatMap((t) => [
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
+          t
+        ),
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branch"),
+          t
+        ),
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchName"),
+          t
+        )
+      ]);
+
+      const companyMatchConditions = companyTargets.flatMap((ct) => [
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyId"),
+          ct
+        ),
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "company"),
+          ct
+        ),
+        sequelize.where(
+          sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyName"),
+          ct
+        )
+      ]);
+
+      const branchVehicleOrConditions: any[] = [...branchUuidMatchConditions];
+
+      if (branchNameMatchConditions.length > 0 && companyMatchConditions.length > 0) {
+        branchVehicleOrConditions.push({
+          [Op.and]: [
+            { [Op.or]: branchNameMatchConditions },
+            { [Op.or]: companyMatchConditions }
+          ]
+        });
+      } else if (branchNameMatchConditions.length > 0) {
+        branchVehicleOrConditions.push(...branchNameMatchConditions);
+      }
 
       const vehicleCount = await AppConfig.count({
         where: {
           moduleKey: "vehicles",
-          [Op.or]: targets.flatMap((t) => [
-            sequelize.where(
-              sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
-              t
-            ),
-            sequelize.where(
-              sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branch"),
-              t
-            ),
-            sequelize.where(
-              sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchName"),
-              t
-            ),
-            sequelize.where(
-              sequelize.cast(sequelize.col("data"), "text"),
-              { [Op.iLike]: `%"branchId": "${t}"%` }
-            ),
-            sequelize.where(
-              sequelize.cast(sequelize.col("data"), "text"),
-              { [Op.iLike]: `%"branchId":"${t}"%` }
-            )
-          ])
+          [Op.or]: branchVehicleOrConditions
         }
       });
 
@@ -407,41 +446,89 @@ export class AppConfigService {
           transaction
         });
 
-        const branchTargets = branches.flatMap((b) => [
-          b.id,
+        const branchUuids = branches.map((b) => b.id).filter(Boolean);
+        const branchNames = branches.flatMap((b) => [
           b.data?.name,
           b.data?.branchName,
           b.data?.code
         ]).filter(Boolean);
 
+        const companyMatchConditions = targets.flatMap((t) => [
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyId"),
+            t
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "company"),
+            t
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyName"),
+            t
+          ),
+          sequelize.where(
+            sequelize.cast(sequelize.col("data"), "text"),
+            { [Op.iLike]: `%"companyId": "${t}"%` }
+          ),
+          sequelize.where(
+            sequelize.cast(sequelize.col("data"), "text"),
+            { [Op.iLike]: `%"companyId":"${t}"%` }
+          )
+        ]);
+
+        const branchUuidMatchConditions = branchUuids.flatMap((uid) => [
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
+            uid
+          ),
+          sequelize.where(
+            sequelize.cast(sequelize.col("data"), "text"),
+            { [Op.iLike]: `%"branchId": "${uid}"%` }
+          ),
+          sequelize.where(
+            sequelize.cast(sequelize.col("data"), "text"),
+            { [Op.iLike]: `%"branchId":"${uid}"%` }
+          )
+        ]);
+
+        const branchNameMatchConditions = branchNames.flatMap((bn) => [
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
+            bn
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branch"),
+            bn
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchName"),
+            bn
+          )
+        ]);
+
+        // Vehicle matching criteria strictly scoped to this company:
+        // 1. Direct company match
+        // 2. Stable branch UUID match (globally unique to this company's branches)
+        // 3. Legacy branch name match scoped STRICTLY to this company (prevents cross-company deletion)
+        const vehicleOrConditions: any[] = [
+          ...companyMatchConditions,
+          ...branchUuidMatchConditions
+        ];
+
+        if (branchNameMatchConditions.length > 0 && companyMatchConditions.length > 0) {
+          vehicleOrConditions.push({
+            [Op.and]: [
+              { [Op.or]: branchNameMatchConditions },
+              { [Op.or]: companyMatchConditions }
+            ]
+          });
+        }
+
         // 2. Find all vehicles linked to these branches or this company
         const vehicles = await AppConfig.findAll({
           where: {
             moduleKey: "vehicles",
-            [Op.or]: [
-              ...targets.flatMap((t) => [
-                sequelize.where(
-                  sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyId"),
-                  t
-                ),
-                sequelize.where(
-                  sequelize.cast(sequelize.col("data"), "text"),
-                  { [Op.iLike]: `%"companyId": "${t}"%` }
-                )
-              ]),
-              ...(branchTargets.length > 0
-                ? branchTargets.flatMap((bt) => [
-                    sequelize.where(
-                      sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
-                      bt
-                    ),
-                    sequelize.where(
-                      sequelize.cast(sequelize.col("data"), "text"),
-                      { [Op.iLike]: `%"branchId": "${bt}"%` }
-                    )
-                  ])
-                : [])
-            ]
+            [Op.or]: vehicleOrConditions
           },
           transaction
         });
@@ -510,21 +597,72 @@ export class AppConfigService {
       if (normalizedKey === "branches" || normalizedKey === "branch") {
         const branchName = record.data?.name || record.data?.branchName || "";
         const branchCode = record.data?.code || "";
-        const targets = [id, branchName, branchCode].filter(Boolean);
+        const branchCompany = record.data?.companyId || record.data?.company || record.data?.companyName || "";
+        const companyTargets = [branchCompany].filter(Boolean);
+        const nameTargets = [branchName, branchCode].filter(Boolean);
+
+        const branchUuidMatchConditions = [
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
+            record.id
+          ),
+          sequelize.where(
+            sequelize.cast(sequelize.col("data"), "text"),
+            { [Op.iLike]: `%"branchId": "${record.id}"%` }
+          ),
+          sequelize.where(
+            sequelize.cast(sequelize.col("data"), "text"),
+            { [Op.iLike]: `%"branchId":"${record.id}"%` }
+          )
+        ];
+
+        const branchNameMatchConditions = nameTargets.flatMap((t) => [
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
+            t
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branch"),
+            t
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchName"),
+            t
+          )
+        ]);
+
+        const companyMatchConditions = companyTargets.flatMap((ct) => [
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyId"),
+            ct
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "company"),
+            ct
+          ),
+          sequelize.where(
+            sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "companyName"),
+            ct
+          )
+        ]);
+
+        const branchVehicleOrConditions: any[] = [...branchUuidMatchConditions];
+
+        if (branchNameMatchConditions.length > 0 && companyMatchConditions.length > 0) {
+          branchVehicleOrConditions.push({
+            [Op.and]: [
+              { [Op.or]: branchNameMatchConditions },
+              { [Op.or]: companyMatchConditions }
+            ]
+          });
+        } else if (branchNameMatchConditions.length > 0) {
+          branchVehicleOrConditions.push(...branchNameMatchConditions);
+        }
 
         const vehicles = await AppConfig.findAll({
           where: {
             moduleKey: "vehicles",
-            [Op.or]: targets.flatMap((t) => [
-              sequelize.where(
-                sequelize.fn("jsonb_extract_path_text", sequelize.col("data"), "branchId"),
-                t
-              ),
-              sequelize.where(
-                sequelize.cast(sequelize.col("data"), "text"),
-                { [Op.iLike]: `%"branchId": "${t}"%` }
-              )
-            ])
+            [Op.or]: branchVehicleOrConditions
           },
           transaction
         });

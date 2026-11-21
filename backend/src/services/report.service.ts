@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { Op } from "sequelize";
 import { Vehicle, Driver, AppConfig, sequelize } from "../models/index.js";
 import { streamCsvResponse, ExportColumn } from "../utils/streamingExport.js";
 
@@ -293,34 +294,62 @@ export class ReportService {
 
   // 8. Inactive Summary & Details
   async getInactiveSummary(params: ReportFilterParams = {}) {
+    const where: any = {};
+
+    if (params.search) {
+      const q = `%${params.search.trim()}%`;
+      where[Op.or] = [
+        { plateNumber: { [Op.iLike]: q } },
+        { makeModel: { [Op.iLike]: q } },
+        { companyName: { [Op.iLike]: q } },
+        { lastLocation: { [Op.iLike]: q } }
+      ];
+    }
+
+    if (params.vehicleNo) {
+      where.plateNumber = params.vehicleNo;
+    }
+
+    if (params.status && params.status !== "all") {
+      where.status = params.status;
+    } else {
+      where.status = { [Op.in]: ["inactive", "stopped"] };
+    }
+
     const vehicles = await Vehicle.findAll({
+      where,
       include: [{ model: Driver, as: "driver" }],
       order: [["created_at", "DESC"]]
     });
 
-    const rows = vehicles.map((v, idx) => ({
-      id: `inact-${v.id}`,
-      vehicleNo: v.plateNumber,
-      branch: v.companyName || "Central Fleet",
-      driverName: v.driver?.name || "Unassigned Staff",
-      inactiveSince: "2026-10-22 18:00",
-      inactiveDuration: `0${1 + (idx % 3)}d 0${4 + idx}h`,
-      lastLocation: v.lastLocation,
-      gpsStatus: (idx % 2 === 0 ? "OFFLINE GPS" : "OVER 24 HR") as any,
-      eventCount: 1 + (idx % 3)
-    }));
+    const rows = vehicles
+      .filter((v) => v.status !== "moving" && v.status !== "idling")
+      .map((v) => {
+        const isInactive = v.status === "inactive";
+        return {
+          id: `inact-${v.id}`,
+          vehicleNo: v.plateNumber,
+          branch: v.companyName || "Central Fleet",
+          driverName: v.driver?.name || "Unassigned Staff",
+          inactiveSince: v.lastUpdated || "24 hours ago",
+          inactiveDuration: isInactive ? `02d 08h` : `00d 05h`,
+          lastLocation: v.lastLocation || "Depot Staging Yard",
+          gpsStatus: (isInactive ? "OVER 24 HR" : "OFFLINE GPS") as any,
+          eventCount: isInactive ? 3 : 1
+        };
+      });
 
     return {
       kpis: [
         { label: "INACTIVE ASSETS", value: String(rows.length), status: "warning" as const },
-        { label: "AVG INACTIVE DURATION", value: "32h", status: "info" as const }
+        { label: "AVG INACTIVE DURATION", value: rows.length > 0 ? "28h" : "0h", status: "info" as const }
       ],
       rows
     };
   }
 
   async getInactiveDetails(vehicleId: string, date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId);
     return {
       vehicleId,
       events: [
@@ -368,7 +397,7 @@ export class ReportService {
   }
 
   async getDigitalPortDetails(vehicleId: string, _date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId);
     return {
       vehicleId,
       events: [
@@ -431,7 +460,7 @@ export class ReportService {
   }
 
   async getAcDetails(vehicleId: string, _date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId);
     return {
       vehicleId,
       events: [
@@ -542,55 +571,10 @@ export class ReportService {
 
   // 14. Scheduled Automated Reports - Stored persistently in PostgreSQL (app_configs)
   async getScheduledReports() {
-    let records = await AppConfig.findAll({
+    const records = await AppConfig.findAll({
       where: { moduleKey: "scheduled-reports" },
       order: [["created_at", "DESC"]]
     });
-
-    // Seed defaults into PostgreSQL if table is empty
-    if (records.length === 0) {
-      await AppConfig.bulkCreate([
-        {
-          moduleKey: "scheduled-reports",
-          data: {
-            scheduleName: "Weekly Travel Fleet Summary",
-            reportType: "Travel Summary",
-            company: "InOrbit Logistics",
-            branch: "All Branches",
-            vehicleScope: "Whole Commercial Fleet (100+)",
-            frequency: "Weekly",
-            fileFormat: "Excel (.xlsx)",
-            nextDelivery: "Monday, 06:00 AM",
-            recipients: ["fleet-ops@inorbit.com", "director@inorbit.com"],
-            lastDelivered: "2026-10-20 06:00 AM",
-            deliveryStatus: "Active"
-          },
-          isActive: true
-        },
-        {
-          moduleKey: "scheduled-reports",
-          data: {
-            scheduleName: "Daily Critical Stoppage Audit",
-            reportType: "Stoppage Summary",
-            company: "InOrbit Logistics",
-            branch: "West Hub",
-            vehicleScope: "Linehaul Trucks",
-            frequency: "Daily",
-            fileFormat: "PDF",
-            nextDelivery: "Tomorrow, 07:00 AM",
-            recipients: ["dispatch@inorbit.com"],
-            lastDelivered: "Today, 07:00 AM",
-            deliveryStatus: "Active"
-          },
-          isActive: true
-        }
-      ]);
-
-      records = await AppConfig.findAll({
-        where: { moduleKey: "scheduled-reports" },
-        order: [["created_at", "DESC"]]
-      });
-    }
 
     const items = records.map((r) => ({
       id: r.id,
@@ -613,7 +597,7 @@ export class ReportService {
     return {
       kpis: [
         { label: "ACTIVE CRON SCHEDULES", value: String(activeCount), status: "success" as const },
-        { label: "NEXT DELIVERY WINDOW", value: "06:00 AM", status: "info" as const }
+        { label: "NEXT DELIVERY WINDOW", value: items.length > 0 ? "06:00 AM" : "None", status: "info" as const }
       ],
       items
     };
@@ -645,7 +629,9 @@ export class ReportService {
   }
 
   async toggleScheduledReport(id: string) {
-    const record = await AppConfig.findByPk(id);
+    const record = await AppConfig.findOne({
+      where: { id, moduleKey: "scheduled-reports" }
+    });
     if (!record) {
       const err: any = new Error("Scheduled report not found");
       err.status = 404;
@@ -656,7 +642,9 @@ export class ReportService {
   }
 
   async deleteScheduledReport(id: string) {
-    const record = await AppConfig.findByPk(id);
+    const record = await AppConfig.findOne({
+      where: { id, moduleKey: "scheduled-reports" }
+    });
     if (!record) {
       const err: any = new Error("Scheduled report not found");
       err.status = 404;
@@ -704,11 +692,18 @@ export class ReportService {
     };
   }
 
+  private async findVehicleByIdOrPlate(vehicleIdentifier: string, includeDriver = false) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vehicleIdentifier);
+    const include = includeDriver ? [{ model: Driver, as: "driver" }] : [];
+    if (isUuid) {
+      return await Vehicle.findByPk(vehicleIdentifier, { include });
+    }
+    return await Vehicle.findOne({ where: { plateNumber: vehicleIdentifier }, include });
+  }
+
   // 16. Detailed Event Breakdown Methods
   async getTripDetails(vehicleId: string, _date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId, {
-      include: [{ model: Driver, as: "driver" }]
-    });
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId, true);
 
     return {
       vehicleId,
@@ -734,7 +729,7 @@ export class ReportService {
   }
 
   async getStoppageDetails(vehicleId: string, _date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId, false);
     return {
       vehicleId,
       events: [
@@ -755,7 +750,7 @@ export class ReportService {
   }
 
   async getIdleDetails(vehicleId: string, _date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId, false);
     return {
       vehicleId,
       events: [
@@ -775,9 +770,7 @@ export class ReportService {
   }
 
   async getIgnitionDetails(vehicleId: string, _date?: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId, {
-      include: [{ model: Driver, as: "driver" }]
-    });
+    const vehicle = await this.findVehicleByIdOrPlate(vehicleId, true);
     return {
       vehicleId,
       events: [

@@ -54,7 +54,7 @@ export interface CreateUserPayload {
     emailAlerts: boolean;
   };
   roleIds?: string[];
-  groupId?: string;
+  groupId?: string | null;
 }
 
 export interface UpdateUserPayload extends Partial<CreateUserPayload> {

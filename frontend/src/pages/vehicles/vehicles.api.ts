@@ -224,7 +224,7 @@ export const vehiclesApi = {
     try {
       const res = await api.get("/vehicles", { params: filters });
       const apiData = res.data?.data || res.data;
-      if (Array.isArray(apiData) && apiData.length > 0) {
+      if (Array.isArray(apiData)) {
         return apiData.map(normalizeVehicle);
       }
     } catch {
@@ -269,7 +269,7 @@ export const vehiclesApi = {
     try {
       const res = await api.get("/vehicles/stats");
       const apiData = res.data?.data || res.data;
-      if (apiData && apiData.totalAssets > 0) {
+      if (apiData && typeof apiData.totalAssets === "number") {
         return apiData;
       }
     } catch {

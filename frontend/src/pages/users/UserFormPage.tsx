@@ -158,7 +158,7 @@ export const UserFormPage: React.FC = () => {
             branch: data.branch,
             reseller: data.reseller,
             allocationGroup: data.allocationGroup,
-            groupId: data.groupId || undefined,
+            groupId: data.groupId || null,
             role: data.role,
             isActive: data.isActive,
             language: data.language,
