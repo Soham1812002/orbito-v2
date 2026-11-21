@@ -54,26 +54,24 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             ref={ref}
             disabled={disabled}
-            className={`w-full appearance-none border bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed select-none ${sizeClasses} ${
-              error
+            className={`w-full appearance-none border bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed select-none ${sizeClasses} ${error
                 ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
                 : "border-slate-200 dark:border-slate-800 dark:focus:border-blue-400"
-            } ${className}`}
+              } ${className}`}
             {...props}
           >
             {options
               ? options.map((opt) => (
-                  <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                    {opt.label}
-                  </option>
-                ))
+                <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                  {opt.label}
+                </option>
+              ))
               : children}
           </select>
 
           <ChevronDown
-            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${
-              sizeVariant === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"
-            } text-slate-400 dark:text-slate-500 shrink-0`}
+            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${sizeVariant === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"
+              } text-slate-400 dark:text-slate-500 shrink-0`}
             aria-hidden="true"
           />
         </div>

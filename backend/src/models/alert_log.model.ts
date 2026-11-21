@@ -159,6 +159,18 @@ AlertLog.init(
       type: DataTypes.TEXT,
       allowNull: true,
       field: "resolution_notes"
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      field: "created_at"
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      field: "updated_at"
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      field: "deleted_at"
     }
   },
   {

@@ -162,8 +162,8 @@ export const RemoveEntityPage: React.FC = () => {
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Select Entity Classification
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {["Vehicle", "GPS Device", "SIM Card", "Driver", "Branch"].map((type) => (
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+              {["Vehicle", "GPS Device", "SIM Card", "Driver", "Branch", "Company"].map((type) => (
                 <button
                   type="button"
                   key={type}
@@ -177,6 +177,10 @@ export const RemoveEntityPage: React.FC = () => {
                   {type}
                 </button>
               ))}
+            </div>
+            <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <span className="font-semibold text-blue-600 dark:text-blue-400">Bottom-up rule:</span>
+              <span>Devices must be removed before Vehicles; Vehicles before Branches; Branches before Companies.</span>
             </div>
           </div>
 

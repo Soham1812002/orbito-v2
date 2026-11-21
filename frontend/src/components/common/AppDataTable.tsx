@@ -1,6 +1,6 @@
 import React from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, GridReadyEvent, ModuleRegistry, AllCommunityModule } from "ag-grid-community";
+import { ColDef, GridReadyEvent, ModuleRegistry, AllCommunityModule, GetRowIdParams } from "ag-grid-community";
 import { Search, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -12,6 +12,7 @@ interface AppDataTableProps<T = any> {
   rowData: T[];
   columnDefs: ColDef<T>[];
   isLoading?: boolean;
+  isFetching?: boolean;
   total?: number;
   page?: number;
   pageSize?: number;
@@ -25,12 +26,15 @@ interface AppDataTableProps<T = any> {
   height?: string | number;
   rowHeight?: number;
   headerHeight?: number;
+  onSortChange?: (sortBy?: string, sortDir?: "ASC" | "DESC") => void;
+  getRowId?: (params: GetRowIdParams<T>) => string;
 }
 
 export function AppDataTable<T = any>({
   rowData,
   columnDefs,
   isLoading = false,
+  isFetching = false,
   total = 0,
   page = 1,
   pageSize = 10,
@@ -43,13 +47,18 @@ export function AppDataTable<T = any>({
   actions,
   height = "480px",
   rowHeight = 52,
-  headerHeight = 44
+  headerHeight = 44,
+  onSortChange,
+  getRowId
 }: AppDataTableProps<T>) {
   const { theme } = useTheme();
 
   const onGridReady = (params: GridReadyEvent) => {
     params.api.sizeColumnsToFit();
   };
+
+  const from = total === 0 || rowData.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = total === 0 || rowData.length === 0 ? 0 : (page - 1) * pageSize + rowData.length;
 
   return (
     <div className="flex flex-col gap-3 w-full">
@@ -88,21 +97,40 @@ export function AppDataTable<T = any>({
       <div
         className={`w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm ag-theme-quartz ${
           theme === "dark" ? "ag-theme-quartz-dark" : ""
-        }`}
+        } transition-opacity duration-150 ${isFetching && !isLoading ? "opacity-75" : "opacity-100"}`}
         style={{ height }}
       >
         <AgGridReact
           theme="legacy"
           rowData={rowData}
           columnDefs={columnDefs}
+          defaultColDef={{ sortable: true, resizable: true }}
           onGridReady={onGridReady}
+          onSortChanged={(event) => {
+            if (!onSortChange) return;
+            const sortModel = event.api.getColumnState().filter((col) => col.sort);
+            if (sortModel.length > 0 && sortModel[0].colId) {
+              const colId = sortModel[0].colId;
+              const dir = sortModel[0].sort === "desc" ? "DESC" : "ASC";
+              onSortChange(colId, dir);
+            } else {
+              onSortChange(undefined, undefined);
+            }
+          }}
           rowSelection="single"
           rowHeight={rowHeight}
           headerHeight={headerHeight}
-          animateRows={true}
+          animateRows={false}
+          getRowId={
+            getRowId ||
+            ((params) => {
+              const d = params.data;
+              return String(d?.id ?? d?.uuid ?? d?._id ?? d?.key ?? Math.random());
+            })
+          }
           loading={isLoading}
           overlayLoadingTemplate={
-            '<div class="flex items-center gap-2 text-slate-500 font-medium"><span>Loading records...</span></div>'
+            '<div class="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-xs"><svg class="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Loading records...</span></div>'
           }
           overlayNoRowsTemplate={
             '<div class="text-slate-400 py-6">No matching records found</div>'
@@ -113,9 +141,16 @@ export function AppDataTable<T = any>({
       {/* Pagination Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 py-1 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-2">
-          <span>
-            Showing <strong className="text-slate-900 dark:text-slate-200">{rowData.length}</strong> of{" "}
-            <strong className="text-slate-900 dark:text-slate-200">{total}</strong> total entries
+          <span className="transition-opacity duration-200">
+            {isLoading ? (
+              <span className="text-slate-400">Loading records...</span>
+            ) : (
+              <>
+                Showing <strong className="text-slate-900 dark:text-slate-200">{from}</strong> to{" "}
+                <strong className="text-slate-900 dark:text-slate-200">{to}</strong> of{" "}
+                <strong className="text-slate-900 dark:text-slate-200">{total}</strong> total entries
+              </>
+            )}
           </span>
           {onPageSizeChange && (
             <div className="flex items-center gap-1.5 ml-4">

@@ -184,6 +184,18 @@ VehicleExpense.init(
       allowNull: false,
       defaultValue: false,
       field: "attach_receipt_later"
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      field: "created_at"
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      field: "updated_at"
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      field: "deleted_at"
     }
   },
   {

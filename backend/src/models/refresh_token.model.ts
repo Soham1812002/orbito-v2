@@ -80,6 +80,14 @@ RefreshToken.init(
       type: DataTypes.STRING(45),
       allowNull: true,
       field: "ip_address"
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      field: "created_at"
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      field: "updated_at"
     }
   },
   {

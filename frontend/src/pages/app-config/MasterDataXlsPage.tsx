@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/common/Button";
 import { AppDataTable } from "@/components/common/AppDataTable";
 import { showToast } from "@/lib/toast";
+import { exportToCsv } from "@/utils/streamingExport";
 import { appConfigApi } from "@/api/appConfig.api";
 
 interface ParsedRecord {
@@ -47,20 +48,13 @@ export const MasterDataXlsPage: React.FC = () => {
   });
 
   const handleDownloadTemplate = () => {
-    const csvContent =
-      "Category,ItemCode,ItemName,DisplayOrder,Description,Status\n" +
-      "Vehicle Categories,CAT_CONTAINER_40FT,40ft High Cube Container,1,Heavy container chassis,Active\n" +
-      "Alert Severities,SEV_FATIGUE,Driver Fatigue Alert,2,Infrared pupil drowsiness monitor,Active\n" +
-      "Sensor Calibrations,CAL_TEMP_REEFER,Pharma Cold Vault Multiplier,1,-20C to +40C resistance curve,Active\n";
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `master_data_template.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const headers = ["Category", "ItemCode", "ItemName", "DisplayOrder", "Description", "Status"];
+    const rows = [
+      ["Vehicle Categories", "CAT_CONTAINER_40FT", "40ft High Cube Container", 1, "Heavy container chassis", "Active"],
+      ["Alert Severities", "SEV_FATIGUE", "Driver Fatigue Alert", 2, "Infrared pupil drowsiness monitor", "Active"],
+      ["Sensor Calibrations", "CAL_TEMP_REEFER", "Pharma Cold Vault Multiplier", 1, "-20C to +40C resistance curve", "Active"]
+    ];
+    exportToCsv("master_data_template", headers, rows);
     showToast.success("Sample template downloaded!");
   };
 

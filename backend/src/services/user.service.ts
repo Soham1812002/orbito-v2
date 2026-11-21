@@ -8,6 +8,7 @@ import {
   UserRole,
   UserPasswordHistory,
   UserGroup,
+  RefreshToken,
   sequelize
 } from "../models/index.js";
 import { PaginationParams, buildPaginatedEnvelope } from "../utils/pagination.util.js";
@@ -20,7 +21,7 @@ export class UserService {
   static async listUsers(params: PaginationParams) {
     const where: WhereOptions = {};
 
-    // Search filter across text columns
+    // Search filter across text columns & combined full name
     if (params.search) {
       const searchTerm = `%${params.search}%`;
       where[Op.or as any] = [
@@ -28,7 +29,11 @@ export class UserService {
         { firstName: { [Op.iLike]: searchTerm } },
         { lastName: { [Op.iLike]: searchTerm } },
         { company: { [Op.iLike]: searchTerm } },
-        { phone: { [Op.iLike]: searchTerm } }
+        { phone: { [Op.iLike]: searchTerm } },
+        sequelize.where(
+          sequelize.fn("concat", sequelize.col("User.first_name"), " ", sequelize.col("User.last_name")),
+          { [Op.iLike]: searchTerm }
+        )
       ];
     }
 
@@ -37,24 +42,41 @@ export class UserService {
       where.isActive = params.filters.isActive === "true" || params.filters.isActive === true;
     }
 
-    if (params.filters.company && params.filters.company !== "ALL") {
+    if (
+      params.filters.company &&
+      params.filters.company !== "ALL" &&
+      params.filters.company !== "All Companies"
+    ) {
       where.company = params.filters.company;
     }
 
     // Sorting
-    let order: [string, string][] = [["created_at", "DESC"]];
+    let order: any[] = [["created_at", "DESC"]];
     if (params.sortBy) {
       const sortColumnMap: Record<string, string> = {
+        fullName: "first_name",
         firstName: "first_name",
         lastName: "last_name",
+        company: "company",
+        allocationGroup: "allocation_group",
         createdAt: "created_at",
         updatedAt: "updated_at",
         isActive: "is_active",
         email: "email",
         id: "id"
       };
-      const column = sortColumnMap[params.sortBy] || params.sortBy;
-      order = [[column, params.sortDir]];
+      if (params.sortBy === "fullName") {
+        order = [
+          ["first_name", params.sortDir],
+          ["last_name", params.sortDir]
+        ];
+      } else if (params.sortBy === "role") {
+        order = [[{ model: Role, as: "roles" }, "name", params.sortDir]];
+      } else if (sortColumnMap[params.sortBy]) {
+        order = [[sortColumnMap[params.sortBy], params.sortDir]];
+      } else {
+        order = [["created_at", "DESC"]];
+      }
     }
 
     const { count, rows } = await User.findAndCountAll({
@@ -97,7 +119,7 @@ export class UserService {
         company: u.company || "InOrbit Fleet Logistics",
         branch: u.branch || "Depot Alpha",
         reseller: u.reseller || "Direct Enterprise",
-        group: u.group?.name || "Fleet Operations Core",
+        group: u.group?.name || "Default Security Policy",
         groupId: u.groupId || null,
         role: primaryRole,
         roles,
@@ -116,7 +138,25 @@ export class UserService {
       };
     });
 
-    return buildPaginatedEnvelope(items, count, params.page, params.limit);
+    const baseWhere: WhereOptions = {};
+    if (
+      params.filters.company &&
+      params.filters.company !== "ALL" &&
+      params.filters.company !== "All Companies"
+    ) {
+      baseWhere.company = params.filters.company;
+    }
+
+    const [activeCount, suspendedCount] = await Promise.all([
+      User.count({ where: { ...baseWhere, isActive: true } }),
+      User.count({ where: { ...baseWhere, isActive: false } })
+    ]);
+
+    return buildPaginatedEnvelope(items, count, params.page, params.limit, {
+      allCount: activeCount + suspendedCount,
+      activeCount,
+      suspendedCount
+    });
   }
 
   static async getUserById(id: string) {
@@ -152,7 +192,7 @@ export class UserService {
       company: user.company || "InOrbit Fleet Logistics",
       branch: user.branch || "Depot Alpha",
       reseller: user.reseller || "Direct Enterprise",
-      group: user.group?.name || "Fleet Operations Core",
+      group: user.group?.name || "Default Security Policy",
       groupId: user.groupId || null,
       role: roles[0] || "USER",
       roles,
@@ -173,7 +213,8 @@ export class UserService {
 
   static async createUser(dto: CreateUserDto) {
     const existing = await User.findOne({
-      where: { email: dto.email.trim().toLowerCase() }
+      where: { email: dto.email.trim().toLowerCase() },
+      paranoid: false
     });
 
     if (existing) {
@@ -275,15 +316,16 @@ export class UserService {
       if (dto.features !== undefined) updateData.features = dto.features as Record<string, boolean>;
 
       if (dto.email !== undefined && dto.email.toLowerCase() !== user.email.toLowerCase()) {
+        const cleanEmail = dto.email.trim().toLowerCase();
         const existing = await User.findOne({
-          where: { email: dto.email.trim().toLowerCase() }
+          where: { email: cleanEmail }
         });
         if (existing) {
           const err: any = new Error("Email is already in use by another account");
           err.status = 400;
           throw err;
         }
-        updateData.email = dto.email;
+        updateData.email = cleanEmail;
       }
 
       if (dto.password) {
@@ -324,13 +366,22 @@ export class UserService {
     }
   }
 
-  static async deleteUser(id: string) {
+  static async deleteUser(id: string, currentUserId?: string) {
+    if (currentUserId && id === currentUserId) {
+      const error: any = new Error("You cannot delete your own active account");
+      error.status = 400;
+      throw error;
+    }
+
     const user = await User.findByPk(id);
     if (!user) {
       const error: any = new Error("User not found");
       error.status = 404;
       throw error;
     }
+
+    // Revoke active sessions / refresh tokens
+    await RefreshToken.destroy({ where: { userId: id } });
 
     // Soft delete (paranoid: true sets deleted_at)
     await user.destroy();
@@ -352,7 +403,11 @@ export class UserService {
     if (params.filters.isActive !== undefined && params.filters.isActive !== "all") {
       where.isActive = params.filters.isActive === "true" || params.filters.isActive === true;
     }
-    if (params.filters.company && params.filters.company !== "ALL") {
+    if (
+      params.filters.company &&
+      params.filters.company !== "ALL" &&
+      params.filters.company !== "All Companies"
+    ) {
       where.company = params.filters.company;
     }
 
@@ -364,11 +419,38 @@ export class UserService {
       { key: "company", label: "Company" },
       { key: "branch", label: "Branch" },
       { key: "reseller", label: "Reseller" },
-      { key: "group", label: "Group", format: (_: any, u: any) => u.group?.name || "—" },
       { key: "role", label: "Role", format: (_: any, u: any) => (u.roles?.[0]?.name) || "USER" },
+      { key: "allocationGroup", label: "Allocation Group", format: (val: any) => val || "—" },
       { key: "isActive", label: "Status", format: (val: any) => (val ? "Active" : "Inactive") },
       { key: "expiryDate", label: "Expiry Date" }
     ];
+
+    let exportOrder: any[] = [["created_at", "DESC"]];
+    if (params.sortBy) {
+      const sortColumnMap: Record<string, string> = {
+        fullName: "first_name",
+        firstName: "first_name",
+        lastName: "last_name",
+        company: "company",
+        allocationGroup: "allocation_group",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
+        isActive: "is_active",
+        email: "email"
+      };
+      if (params.sortBy === "fullName") {
+        exportOrder = [
+          ["first_name", params.sortDir],
+          ["last_name", params.sortDir]
+        ];
+      } else if (params.sortBy === "role") {
+        exportOrder = [[{ model: Role, as: "roles" }, "name", params.sortDir]];
+      } else if (sortColumnMap[params.sortBy]) {
+        exportOrder = [[sortColumnMap[params.sortBy], params.sortDir]];
+      } else {
+        exportOrder = [["created_at", "DESC"]];
+      }
+    }
 
     await streamCsvResponse(
       res,
@@ -379,7 +461,7 @@ export class UserService {
           where,
           limit: batchSize,
           offset,
-          order: [["created_at", "DESC"]],
+          order: exportOrder,
           include: [
             {
               model: UserGroup,

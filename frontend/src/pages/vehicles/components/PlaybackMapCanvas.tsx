@@ -40,6 +40,7 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
   const vehicleMarkerRef = useRef<maplibregl.Marker | null>(null);
   const stoppageMarkersRef = useRef<maplibregl.Marker[]>([]);
   const isMapLoadedRef = useRef<boolean>(false);
+  const lastPolylineUpdateRef = useRef<number>(0);
 
   const [internalFollow, setInternalFollow] = useState<boolean>(followVehicle);
 
@@ -94,6 +95,10 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
 
     return () => {
       resizeObserver.disconnect();
+      if (vehicleMarkerRef.current) {
+        vehicleMarkerRef.current.remove();
+        vehicleMarkerRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
       isMapLoadedRef.current = false;
@@ -119,12 +124,16 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
     if (!map || !session || session.points.length === 0) return;
 
     const setupLayers = () => {
-      const allCoords = session.points.map((p) => [p.longitude, p.latitude]);
+      if (!map.isStyleLoaded()) return;
+
+      const allCoords = session.points.map((p) => [p.longitude, p.latitude] as [number, number]);
+      if (allCoords.length < 2) return;
 
       // Remove previous layers/sources if present
       if (map.getLayer("route-traversed-line")) map.removeLayer("route-traversed-line");
       if (map.getLayer("route-traversed-glow")) map.removeLayer("route-traversed-glow");
       if (map.getLayer("route-remaining-line")) map.removeLayer("route-remaining-line");
+      if (map.getLayer("route-remaining-glow")) map.removeLayer("route-remaining-glow");
       if (map.getSource("source-traversed")) map.removeSource("source-traversed");
       if (map.getSource("source-remaining")) map.removeSource("source-remaining");
 
@@ -152,11 +161,12 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
       });
 
       // 2. Traversed route source & layers (bright glowing path behind vehicle)
+      const initialTraversed = [allCoords[0], allCoords[0]];
       map.addSource("source-traversed", {
         type: "geojson",
         data: {
           type: "Feature",
-          geometry: { type: "LineString", coordinates: [allCoords[0]] },
+          geometry: { type: "LineString", coordinates: initialTraversed },
           properties: {}
         }
       });
@@ -212,7 +222,10 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
     if (map.isStyleLoaded()) {
       setupLayers();
     } else {
-      map.once("styledata", setupLayers);
+      map.once("load", setupLayers);
+      map.once("styledata", () => {
+        if (map.isStyleLoaded()) setupLayers();
+      });
     }
   }, [session, fitRouteBounds]);
 
@@ -225,7 +238,13 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
     if (!state) return;
 
     // 1. Create or smoothly update the vehicle marker
-    if (!vehicleMarkerRef.current) {
+    const markerEl = vehicleMarkerRef.current?.getElement();
+    if (!vehicleMarkerRef.current || !markerEl || !markerEl.parentElement) {
+      if (vehicleMarkerRef.current) {
+        vehicleMarkerRef.current.remove();
+        vehicleMarkerRef.current = null;
+      }
+
       const el = document.createElement("div");
       el.className = "relative flex items-center justify-center cursor-pointer select-none";
       el.style.width = "48px";
@@ -234,7 +253,7 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
       el.innerHTML = `
         <div class="telematics-radar absolute w-14 h-14 rounded-full bg-blue-500/30 animate-ping pointer-events-none"></div>
         <div class="vehicle-disc relative flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 border-2 border-white shadow-2xl ring-4 ring-blue-500/40">
-          <div class="vehicle-arrow w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[14px] border-b-white transition-transform duration-75"
+          <div class="vehicle-arrow w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[14px] border-b-white"
                style="transform: rotate(${state.heading}deg)"></div>
         </div>
         <div class="speed-hud absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white bg-slate-900/95 border border-slate-700/80 shadow-md pointer-events-none">
@@ -267,34 +286,32 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
       }
     }
 
-    // 2. Update dynamic dual-tone polyline segments
-    if (map.getSource("source-traversed") && map.getSource("source-remaining")) {
-      const { traversed, remaining } = splitRouteCoordinates(
-        session.points,
-        state.position,
-        progress
-      );
+    // 2. Update dynamic traversed polyline segment (throttled to avoid worker backlog)
+    const now = performance.now();
+    const isEdge = progress === 0 || progress >= (session.points.length - 1);
+    if (now - lastPolylineUpdateRef.current > 40 || isEdge) {
+      lastPolylineUpdateRef.current = now;
 
-      const traversedSource = map.getSource("source-traversed") as maplibregl.GeoJSONSource;
-      traversedSource.setData({
-        type: "Feature",
-        geometry: { type: "LineString", coordinates: traversed },
-        properties: {}
-      });
+      if (map.getSource("source-traversed")) {
+        const { traversed } = splitRouteCoordinates(
+          session.points,
+          state.position,
+          progress
+        );
 
-      const remainingSource = map.getSource("source-remaining") as maplibregl.GeoJSONSource;
-      remainingSource.setData({
-        type: "Feature",
-        geometry: { type: "LineString", coordinates: remaining },
-        properties: {}
-      });
+        const traversedSource = map.getSource("source-traversed") as maplibregl.GeoJSONSource;
+        traversedSource.setData({
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: traversed },
+          properties: {}
+        });
+      }
     }
 
     // 3. Smooth Camera Tracking (Follow Mode)
     if (internalFollow) {
-      map.easeTo({
-        center: state.position,
-        duration: 0 // Immediate sub-frame camera pan without lag
+      map.jumpTo({
+        center: state.position
       });
     }
   }, [progress, session, internalFollow, isPlaying]);
@@ -309,11 +326,10 @@ export const PlaybackMapCanvas: React.FC<PlaybackMapCanvasProps> = ({
           type="button"
           onClick={() => setFollow(!internalFollow)}
           title={internalFollow ? "Disable Follow Mode" : "Follow Vehicle"}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md border shadow-lg transition-all ${
-            internalFollow
-              ? "bg-blue-600/90 text-white border-blue-400 shadow-blue-500/25 ring-2 ring-blue-400/30"
-              : "bg-slate-900/80 text-slate-300 border-slate-700 hover:bg-slate-800"
-          }`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md border shadow-lg transition-all ${internalFollow
+            ? "bg-blue-600/90 text-white border-blue-400 shadow-blue-500/25 ring-2 ring-blue-400/30"
+            : "bg-slate-900/80 text-slate-300 border-slate-700 hover:bg-slate-800"
+            }`}
         >
           <Navigation className={`w-3.5 h-3.5 ${internalFollow ? "animate-pulse" : ""}`} />
           <span>{internalFollow ? "Following Vehicle" : "Follow Vehicle"}</span>

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { usersApi } from "@/api/users.api";
 import {
   UserFilters,
@@ -28,7 +28,8 @@ export const userKeys = {
 export const useUserList = (params: UserFilters) => {
   return useQuery({
     queryKey: userKeys.list(params),
-    queryFn: ({ signal }) => usersApi.getUsers(params, signal)
+    queryFn: ({ signal }) => usersApi.getUsers(params, signal),
+    placeholderData: keepPreviousData
   });
 };
 
@@ -94,7 +95,8 @@ export const useDeleteUser = () => {
 export const useUserGroupList = (params?: UserGroupFilters) => {
   return useQuery({
     queryKey: userKeys.groupList(params),
-    queryFn: () => usersApi.getUserGroups(params)
+    queryFn: () => usersApi.getUserGroups(params),
+    placeholderData: keepPreviousData
   });
 };
 

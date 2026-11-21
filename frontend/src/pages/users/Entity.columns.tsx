@@ -3,6 +3,7 @@ import { ColDef, ICellRendererParams } from "ag-grid-community";
 import dayjs from "dayjs";
 import { Edit2, Trash2, Copy } from "lucide-react";
 import { User } from "@/types/users.types";
+import { StatusBadge } from "@/components/common/StatusBadge";
 
 interface ColumnOptions {
   onEdit: (user: User) => void;
@@ -71,27 +72,9 @@ export const getUserColumns = ({
       field: "isActive",
       headerName: "Status",
       width: 120,
-      cellRenderer: (params: ICellRendererParams<User>) => {
-        const isActive = params.value as boolean;
-        return (
-          <div className="flex items-center h-full">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                isActive
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-              }`}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isActive ? "bg-emerald-500" : "bg-slate-400"
-                }`}
-              />
-              {isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
-        );
-      }
+      cellRenderer: (params: ICellRendererParams<User>) => (
+        <StatusBadge status={Boolean(params.value)} />
+      )
     },
     {
       field: "createdAt",

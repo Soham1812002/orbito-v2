@@ -2,10 +2,8 @@ import React from "react";
 import {
   X,
   Navigation,
-  Gauge,
   Battery,
   Fuel,
-  Thermometer,
   ShieldAlert,
   Share2,
   Clock,
@@ -123,23 +121,25 @@ export const VehicleTelemetryDrawer: React.FC<VehicleTelemetryDrawerProps> = ({
           </div>
 
           {/* Real-time Telemetry Bars */}
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-            <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-slate-200/60 dark:border-slate-800">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="flex items-center gap-1">
-                  <Fuel className="h-3.5 w-3.5 text-blue-500" /> Fuel / Energy
-                </span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{vehicle.fuelPercent}%</span>
+          <div className={`mt-4 grid gap-3 text-xs ${vehicle.category === "electric_cargo" ? "grid-cols-1" : "grid-cols-2"}`}>
+            {vehicle.category !== "electric_cargo" && (
+              <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-slate-200/60 dark:border-slate-800">
+                <div className="flex items-center justify-between text-slate-500 mb-1">
+                  <span className="flex items-center gap-1">
+                    <Fuel className="h-3.5 w-3.5 text-blue-500" /> Fuel Level
+                  </span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{vehicle.fuelPercent}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${vehicle.fuelPercent}%` }} />
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${vehicle.fuelPercent}%` }} />
-              </div>
-            </div>
+            )}
 
             <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-slate-200/60 dark:border-slate-800">
               <div className="flex items-center justify-between text-slate-500 mb-1">
                 <span className="flex items-center gap-1">
-                  <Battery className="h-3.5 w-3.5 text-emerald-500" /> Battery
+                  <Battery className="h-3.5 w-3.5 text-emerald-500" /> {vehicle.category === "electric_cargo" ? "Traction Battery (SOC)" : "Starter Battery"}
                 </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{vehicle.batteryPercent}%</span>
               </div>
@@ -194,28 +194,43 @@ export const VehicleTelemetryDrawer: React.FC<VehicleTelemetryDrawerProps> = ({
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <UserCheck className="h-4 w-4 text-blue-500" /> Assigned Driver
             </span>
-            <span className="text-[11px] font-medium text-amber-500">⭐ {vehicle.driver.rating || 4.8} / 5.0</span>
+            {vehicle.driver?.rating && (
+              <span className="text-[11px] font-medium text-amber-500">⭐ {vehicle.driver.rating} / 5.0</span>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-sm">
-              {vehicle.driver.name.split(" ").map((n) => n[0]).join("")}
+          {vehicle.driver ? (
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-sm">
+                {(vehicle.driver.name || "NA")
+                  .split(" ")
+                  .map((n) => n[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join("") || "NA"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                  {vehicle.driver.name}
+                </p>
+                <p className="text-xs text-slate-500 font-mono">
+                  {vehicle.driver.licenseNumber || "License N/A"}
+                </p>
+              </div>
+              {vehicle.driver.phone && (
+                <a
+                  href={`tel:${vehicle.driver.phone}`}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 transition-colors"
+                  title="Call driver"
+                >
+                  <Phone className="h-4 w-4" />
+                </a>
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                {vehicle.driver.name}
-              </p>
-              <p className="text-xs text-slate-500 font-mono">
-                {vehicle.driver.licenseNumber}
-              </p>
+          ) : (
+            <div className="py-2 text-center text-xs text-slate-400">
+              No driver assigned to this asset
             </div>
-            <a
-              href={`tel:${vehicle.driver.phone}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 transition-colors"
-              title="Call driver"
-            >
-              <Phone className="h-4 w-4" />
-            </a>
-          </div>
+          )}
         </div>
 
         {/* Device & Immobilizer Status */}
@@ -228,7 +243,7 @@ export const VehicleTelemetryDrawer: React.FC<VehicleTelemetryDrawerProps> = ({
           </div>
           <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
             <span className="text-slate-500 flex items-center gap-1.5">
-              {vehicle.immobilizerState === "cut_off" ? (
+              {vehicle.immobilizerState === "cut_off" || vehicle.immobilizerState === "locked" ? (
                 <Lock className="h-4 w-4 text-rose-500" />
               ) : (
                 <Unlock className="h-4 w-4 text-emerald-500" />
@@ -237,12 +252,14 @@ export const VehicleTelemetryDrawer: React.FC<VehicleTelemetryDrawerProps> = ({
             </span>
             <span
               className={`font-semibold text-[11px] ${
-                vehicle.immobilizerState === "cut_off"
+                vehicle.immobilizerState === "cut_off" || vehicle.immobilizerState === "locked"
                   ? "text-rose-600 dark:text-rose-400"
                   : "text-emerald-600 dark:text-emerald-400"
               }`}
             >
-              {vehicle.immobilizerState === "cut_off" ? "CUT-OFF ACTIVE" : "NORMAL (UNLOCKED)"}
+              {vehicle.immobilizerState === "cut_off" || vehicle.immobilizerState === "locked"
+                ? "CUT-OFF ACTIVE"
+                : "NORMAL (UNLOCKED)"}
             </span>
           </div>
         </div>

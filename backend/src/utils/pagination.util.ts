@@ -17,6 +17,7 @@ export interface PaginatedResult<T> {
     currentPage: number;
     limit: number;
     totalPages: number;
+    [key: string]: any;
   };
 }
 
@@ -41,6 +42,20 @@ export const parsePaginationParams = (req: Request): PaginationParams => {
     }
   }
 
+  // Support direct queries and bracket notation (?company=X or ?filter[company]=X)
+  if (query.company && typeof query.company === "string") {
+    filters.company = query.company;
+  }
+  if (query.isActive !== undefined) {
+    filters.isActive = query.isActive;
+  }
+  if (query["filter[company]"]) {
+    filters.company = String(query["filter[company]"]);
+  }
+  if (query["filter[isActive]"] !== undefined) {
+    filters.isActive = query["filter[isActive]"];
+  }
+
   return {
     page,
     limit,
@@ -56,7 +71,8 @@ export const buildPaginatedEnvelope = <T>(
   items: T[],
   totalCount: number,
   page: number,
-  limit: number
+  limit: number,
+  extraMeta?: Record<string, any>
 ): PaginatedResult<T> => {
   const totalPages = Math.ceil(totalCount / limit) || 1;
   return {
@@ -65,7 +81,8 @@ export const buildPaginatedEnvelope = <T>(
       totalCount,
       currentPage: page,
       limit,
-      totalPages
+      totalPages,
+      ...extraMeta
     }
   };
 };

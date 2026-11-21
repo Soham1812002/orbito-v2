@@ -554,6 +554,16 @@ export const usersApi = {
     }
 
     let items = [...FALLBACK_USERS];
+    const targetCompany = params.company || params.filter?.company;
+    if (targetCompany && targetCompany !== "All Companies") {
+      items = items.filter((u) => u.company === targetCompany);
+    }
+
+    // Organization total counts (independent of search text)
+    const totalAll = items.length;
+    const totalActive = items.filter((u) => u.isActive).length;
+    const totalSuspended = totalAll - totalActive;
+
     if (params.search) {
       const q = params.search.toLowerCase();
       items = items.filter(
@@ -563,9 +573,6 @@ export const usersApi = {
           u.company.toLowerCase().includes(q) ||
           u.allocationGroup.toLowerCase().includes(q)
       );
-    }
-    if (params.company && params.company !== "All Companies") {
-      items = items.filter((u) => u.company === params.company);
     }
     if (params.filter?.isActive !== undefined && params.filter?.isActive !== "all") {
       const activeBool = params.filter.isActive === true || params.filter.isActive === "true";
@@ -582,7 +589,12 @@ export const usersApi = {
       total: items.length,
       page,
       pageSize: limit,
-      totalPages: Math.ceil(items.length / limit) || 1
+      totalPages: Math.ceil(items.length / limit) || 1,
+      metadata: {
+        allCount: totalAll,
+        activeCount: totalActive,
+        suspendedCount: totalSuspended
+      }
     });
   },
 
@@ -601,7 +613,10 @@ export const usersApi = {
     try {
       const response = await apiClient.post("/users", payload);
       return response.data?.result || response.data;
-    } catch {
+    } catch (error: any) {
+      if (error?.response?.data) {
+        throw error;
+      }
       const newId = `user-${Date.now()}`;
       return { id: newId };
     }
@@ -611,7 +626,10 @@ export const usersApi = {
     try {
       const response = await apiClient.put(`/users/${id}`, payload);
       return response.data?.result || response.data;
-    } catch {
+    } catch (error: any) {
+      if (error?.response?.data) {
+        throw error;
+      }
       return { id };
     }
   },
@@ -650,8 +668,17 @@ export const usersApi = {
           g.adminRole.toLowerCase().includes(q)
       );
     }
-    if (params?.company && params.company !== "ALL") {
+    if (params?.company && params.company !== "ALL" && params.company !== "All Companies") {
       items = items.filter((g) => g.company === params.company);
+    }
+
+    const allCount = items.length;
+    const activeCount = items.filter((g) => g.isActive).length;
+    const suspendedCount = allCount - activeCount;
+
+    const rawIsActive = params?.filter?.isActive !== undefined ? params.filter.isActive : params?.isActive;
+    if (rawIsActive !== undefined) {
+      items = items.filter((g) => g.isActive === rawIsActive);
     }
 
     const page = params?.page || 1;
@@ -664,7 +691,10 @@ export const usersApi = {
       total: items.length,
       page,
       pageSize: limit,
-      totalPages: Math.ceil(items.length / limit) || 1
+      totalPages: Math.ceil(items.length / limit) || 1,
+      allCount,
+      activeCount,
+      suspendedCount
     });
   },
 
@@ -728,11 +758,18 @@ export const usersApi = {
   },
 
   getCompanies: async (): Promise<string[]> => {
-    return [
-      "All Companies",
-      "InOrbit Fleet Logistics",
-      "Apex Transport & Cargo",
-      "Velocity Track Ltd"
-    ];
+    try {
+      const res = await apiClient.get("/app-configs/companies");
+      const list = res.data?.items || res.data?.result || [];
+      const names = list.map((c: any) => c.name || c.companyName).filter(Boolean);
+      return ["All Companies", ...(Array.from(new Set(names)) as string[])];
+    } catch {
+      return [
+        "All Companies",
+        "Apex Logistics India Pvt Ltd",
+        "TransGlobe Cold Chain Corp",
+        "SafeHaul Petroleum Carriers"
+      ];
+    }
   }
 };

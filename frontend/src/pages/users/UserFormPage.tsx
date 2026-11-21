@@ -20,20 +20,26 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/common/Button";
+import { Select } from "@/components/common/Select";
 import { userFormSchema, UserFormData } from "@/schemas/users.schema";
 import {
   useCreateUser,
   useUpdateUser,
   useUserDetail,
   useRolesList,
-  useCompaniesList
+  useCompaniesList,
+  useUserGroupList
 } from "@/queries/users.queries";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { updateUserProfile } from "@/redux/userSlice";
 import { showToast } from "@/lib/toast";
 
 export const UserFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { currentUser } = useAppSelector((state) => state.user);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,6 +47,7 @@ export const UserFormPage: React.FC = () => {
   const { data: existingUser, isLoading: userLoading } = useUserDetail(id || "");
   const { data: roles = [] } = useRolesList();
   const { data: companies = [] } = useCompaniesList();
+  const { data: userGroups } = useUserGroupList();
 
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
@@ -51,8 +58,10 @@ export const UserFormPage: React.FC = () => {
     reset,
     watch,
     setValue,
+    setError,
     formState: { errors, isSubmitting }
   } = useForm<UserFormData>({
+    mode: "onBlur",
     resolver: zodResolver(userFormSchema),
     defaultValues: {
       firstName: "",
@@ -65,6 +74,7 @@ export const UserFormPage: React.FC = () => {
       branch: "Mumbai Central Hub",
       reseller: "Direct Enterprise",
       allocationGroup: "All India Logistics",
+      groupId: "",
       role: "FLEET_MANAGER",
       isActive: true,
       language: "en",
@@ -101,6 +111,7 @@ export const UserFormPage: React.FC = () => {
         branch: existingUser.branch || "Mumbai Central Hub",
         reseller: existingUser.reseller || "Direct Enterprise",
         allocationGroup: existingUser.allocationGroup || "All India Logistics",
+        groupId: existingUser.groupId || "",
         role: existingUser.role || "FLEET_MANAGER",
         isActive: existingUser.isActive,
         language: existingUser.language || "en",
@@ -118,6 +129,22 @@ export const UserFormPage: React.FC = () => {
   }, [existingUser, isEdit, reset]);
 
   const onSubmit = async (data: UserFormData) => {
+    // In Create mode, password is required and must be at least 6 characters
+    if (!isEdit) {
+      if (!data.password || data.password.trim().length < 6) {
+        setError("password", { message: "Password is required (minimum 6 characters)" });
+        return;
+      }
+      if (!data.confirmPassword) {
+        setError("confirmPassword", { message: "Please confirm your password" });
+        return;
+      }
+      if (data.password !== data.confirmPassword) {
+        setError("confirmPassword", { message: "Passwords do not match" });
+        return;
+      }
+    }
+
     try {
       if (isEdit && id) {
         await updateUserMutation.mutateAsync({
@@ -131,6 +158,7 @@ export const UserFormPage: React.FC = () => {
             branch: data.branch,
             reseller: data.reseller,
             allocationGroup: data.allocationGroup,
+            groupId: data.groupId || null,
             role: data.role,
             isActive: data.isActive,
             language: data.language,
@@ -141,17 +169,32 @@ export const UserFormPage: React.FC = () => {
             ...(data.password ? { password: data.password } : {})
           }
         });
+
+        // Sync Redux currentUser in real-time if editing currently logged-in account
+        if (
+          currentUser &&
+          (currentUser.id === id || currentUser.email?.toLowerCase() === existingUser?.email?.toLowerCase())
+        ) {
+          dispatch(
+            updateUserProfile({
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email
+            })
+          );
+        }
       } else {
         await createUserMutation.mutateAsync({
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
           phone: data.phone,
-          password: data.password || "Admin@123456",
+          password: data.password!,
           company: data.company,
           branch: data.branch,
           reseller: data.reseller,
           allocationGroup: data.allocationGroup,
+          groupId: data.groupId || undefined,
           role: data.role,
           isActive: data.isActive,
           language: data.language,
@@ -162,8 +205,28 @@ export const UserFormPage: React.FC = () => {
         });
       }
       navigate("/users/list");
-    } catch {
-      // Error handled by query mutation
+    } catch (err: any) {
+      const resData = err?.response?.data;
+      const rawMsg =
+        (Array.isArray(resData?.errors) ? resData.errors.join(", ") : null) ||
+        resData?.message ||
+        resData?.error ||
+        err?.message ||
+        "Failed to save user";
+
+      const formattedMsg = rawMsg.toLowerCase().includes("duplicate value for field email")
+        ? "User with this email already exists"
+        : rawMsg;
+
+      if (formattedMsg.toLowerCase().includes("email") || formattedMsg.toLowerCase().includes("duplicate")) {
+        setError("email", { message: formattedMsg });
+        showToast.error(formattedMsg);
+      } else if (formattedMsg.toLowerCase().includes("phone")) {
+        setError("phone", { message: formattedMsg });
+        showToast.error(formattedMsg);
+      } else {
+        showToast.error(formattedMsg);
+      }
     }
   };
 
@@ -182,45 +245,24 @@ export const UserFormPage: React.FC = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-20">
       <PageHeader
         breadcrumbs={[
-          { label: "System Config", href: "/system-config" },
           { label: "User Rights", href: "/users" },
-          { label: "Users Directory", href: "/users/list" },
-          { label: isEdit ? "Edit User Detail" : "Add User Detail" }
+          { label: "Users Directory", href: "/users/list" }
         ]}
         title={isEdit ? `Edit User: ${existingUser?.fullName || ""}` : "Add User Detail"}
         badge={isEdit ? "EXISTING ACCOUNT" : "NEW USER"}
         badgeVariant="cyan"
         description="Configure account credentials, organizational allocation groups, and telematics portal feature access."
         actions={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={<ArrowLeft className="h-4 w-4" />}
-              onClick={() => navigate("/users/list")}
-            >
-              Back to List
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={<X className="h-4 w-4" />}
-              onClick={() => navigate("/users/list")}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              leftIcon={<Save className="h-4 w-4" />}
-              disabled={isSubmitting || createUserMutation.isPending || updateUserMutation.isPending}
-            >
-              {isSubmitting ? "Saving..." : isEdit ? "Update User" : "Save User"}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            onClick={() => navigate("/users/list")}
+          >
+            Back to List
+          </Button>
         }
       />
-
       {/* SECTION 1: User Information & Allocation (Figma Node 3039:200 Frame 3 Section 1) */}
       <div className="panel-card space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -245,11 +287,10 @@ export const UserFormPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setValue("isActive", !isActive)}
-              className={`px-3 py-1 rounded-full text-2xs font-bold transition-all focus-ring ${
-                isActive
-                  ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
-                  : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700"
-              }`}
+              className={`px-3 py-1 rounded-full text-2xs font-bold transition-all focus-ring ${isActive
+                ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+                : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700"
+                }`}
             >
               {isActive ? "ACTIVE" : "SUSPENDED"}
             </button>
@@ -258,97 +299,83 @@ export const UserFormPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Reseller */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Reseller / Distributor
-            </label>
-            <select
-              {...register("reseller")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="Direct Enterprise">Direct Enterprise</option>
-              <option value="Apex Telecom Reseller">Apex Telecom Reseller</option>
-              <option value="Velocity Distribution India">Velocity Distribution India</option>
-            </select>
-          </div>
+          <Select
+            label="Reseller / Distributor"
+            {...register("reseller")}
+            sizeVariant="md"
+            options={[
+              { label: "Direct Enterprise", value: "Direct Enterprise" },
+              { label: "Apex Telecom Reseller", value: "Apex Telecom Reseller" },
+              { label: "Velocity Distribution India", value: "Velocity Distribution India" }
+            ]}
+          />
 
           {/* Company */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Company Organization <span className="text-rose-500">*</span>
-            </label>
-            <select
-              {...register("company")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              {companies.filter((c) => c !== "All Companies").map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            {errors.company && (
-              <p className="text-2xs text-rose-500">{errors.company.message}</p>
-            )}
-          </div>
+          <Select
+            label="Company Organization"
+            {...register("company")}
+            error={errors.company?.message}
+            sizeVariant="md"
+            options={companies
+              .filter((c) => c !== "All Companies")
+              .map((c) => ({ label: c, value: c }))}
+          />
 
           {/* Branch */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Operating Branch
-            </label>
-            <select
-              {...register("branch")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="Mumbai Central Hub">Mumbai Central Hub</option>
-              <option value="Delhi NCR Depot">Delhi NCR Depot</option>
-              <option value="Bengaluru Tech Park">Bengaluru Tech Park</option>
-              <option value="Ahmedabad Transit Hub">Ahmedabad Transit Hub</option>
-              <option value="Chennai Port Depot">Chennai Port Depot</option>
-            </select>
-          </div>
+          <Select
+            label="Operating Branch"
+            {...register("branch")}
+            sizeVariant="md"
+            options={[
+              { label: "Mumbai Central Hub", value: "Mumbai Central Hub" },
+              { label: "Delhi NCR Depot", value: "Delhi NCR Depot" },
+              { label: "Bengaluru Tech Park", value: "Bengaluru Tech Park" },
+              { label: "Ahmedabad Transit Hub", value: "Ahmedabad Transit Hub" },
+              { label: "Chennai Port Depot", value: "Chennai Port Depot" }
+            ]}
+          />
 
           {/* Allocation Group */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Allocation Group <span className="text-rose-500">*</span>
-            </label>
-            <select
-              {...register("allocationGroup")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="All India Logistics">All India Logistics</option>
-              <option value="Western Express Corridor">Western Express Corridor</option>
-              <option value="Northern Logistics Corridor">Northern Logistics Corridor</option>
-              <option value="Southern Fleet Ring">Southern Fleet Ring</option>
-              <option value="Gujarat Corridor Express">Gujarat Corridor Express</option>
-              <option value="Eastern Freight Corridor">Eastern Freight Corridor</option>
-            </select>
-            {errors.allocationGroup && (
-              <p className="text-2xs text-rose-500">{errors.allocationGroup.message}</p>
-            )}
-          </div>
+          <Select
+            label="Allocation Group"
+            {...register("allocationGroup")}
+            error={errors.allocationGroup?.message}
+            sizeVariant="md"
+            options={[
+              { label: "All India Logistics", value: "All India Logistics" },
+              { label: "Western Express Corridor", value: "Western Express Corridor" },
+              { label: "Northern Logistics Corridor", value: "Northern Logistics Corridor" },
+              { label: "Southern Fleet Ring", value: "Southern Fleet Ring" },
+              { label: "Gujarat Corridor Express", value: "Gujarat Corridor Express" },
+              { label: "Eastern Freight Corridor", value: "Eastern Freight Corridor" }
+            ]}
+          />
+
+          {/* Security Group (RBAC Policy) */}
+          <Select
+            label="Security Group (RBAC Policy)"
+            {...register("groupId")}
+            sizeVariant="md"
+            options={[
+              { label: "No Group Assigned (Default View Only)", value: "" },
+              ...(userGroups?.rows || []).map((g) => ({
+                label: `${g.name} (${g.company})`,
+                value: g.id
+              }))
+            ]}
+          />
 
           {/* System Role */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              System Role / Permissions <span className="text-rose-500">*</span>
-            </label>
-            <select
-              {...register("role")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              {roles.map((r) => (
-                <option key={r.id} value={r.name}>
-                  {r.name} - {r.description}
-                </option>
-              ))}
-            </select>
-            {errors.role && (
-              <p className="text-2xs text-rose-500">{errors.role.message}</p>
-            )}
-          </div>
+          <Select
+            label="System Role / Permissions"
+            {...register("role")}
+            error={errors.role?.message}
+            sizeVariant="md"
+            options={roles.map((r) => ({
+              label: `${r.name.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())} - ${r.description}`,
+              value: r.name
+            }))}
+          />
         </div>
       </div>
 
@@ -444,7 +471,7 @@ export const UserFormPage: React.FC = () => {
           {/* Password */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {isEdit ? "New Password (Leave blank to keep existing)" : "Password *"}
+              {isEdit ? "New Password" : "Password"} <span className={isEdit ? "text-slate-400 font-normal" : "text-rose-500"}>{isEdit ? "(Leave blank to keep existing)" : "*"}</span>
             </label>
             <div className="relative">
               <input
@@ -472,7 +499,7 @@ export const UserFormPage: React.FC = () => {
           {/* Confirm Password */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Confirm Password
+              {isEdit ? "Confirm New Password" : "Confirm Password"} {!isEdit && <span className="text-rose-500">*</span>}
             </label>
             <div className="relative">
               <input
@@ -517,64 +544,52 @@ export const UserFormPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Language */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Language
-            </label>
-            <select
-              {...register("language")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="en">English (India / US)</option>
-              <option value="hi">Hindi (हिन्दी)</option>
-              <option value="gu">Gujarati (ગુજરાતી)</option>
-              <option value="mr">Marathi (मराठी)</option>
-            </select>
-          </div>
+          <Select
+            label="Language"
+            {...register("language")}
+            sizeVariant="md"
+            options={[
+              { label: "English (India / US)", value: "en" },
+              { label: "Hindi (हिन्दी)", value: "hi" },
+              { label: "Gujarati (ગુજરાતી)", value: "gu" },
+              { label: "Marathi (मराठी)", value: "mr" }
+            ]}
+          />
 
           {/* Time Zone */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Time Zone
-            </label>
-            <select
-              {...register("timezone")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="Asia/Kolkata">UTC+05:30 (IST - Indian Standard Time)</option>
-              <option value="Asia/Dubai">UTC+04:00 (GST - Gulf Standard Time)</option>
-              <option value="UTC">UTC+00:00 (Coordinated Universal Time)</option>
-            </select>
-          </div>
+          <Select
+            label="Time Zone"
+            {...register("timezone")}
+            sizeVariant="md"
+            options={[
+              { label: "UTC+05:30 (IST - Indian Standard Time)", value: "Asia/Kolkata" },
+              { label: "UTC+04:00 (GST - Gulf Standard Time)", value: "Asia/Dubai" },
+              { label: "UTC+00:00 (Coordinated Universal Time)", value: "UTC" }
+            ]}
+          />
 
           {/* Date Format */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Date Format
-            </label>
-            <select
-              {...register("dateFormat")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="DD/MM/YYYY">DD/MM/YYYY (Indian Standard)</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD (ISO Format)</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY (US Format)</option>
-            </select>
-          </div>
+          <Select
+            label="Date Format"
+            {...register("dateFormat")}
+            sizeVariant="md"
+            options={[
+              { label: "DD/MM/YYYY (Indian Standard)", value: "DD/MM/YYYY" },
+              { label: "YYYY-MM-DD (ISO Format)", value: "YYYY-MM-DD" },
+              { label: "MM/DD/YYYY (US Format)", value: "MM/DD/YYYY" }
+            ]}
+          />
 
           {/* Measurement Unit */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Speed & Distance Unit
-            </label>
-            <select
-              {...register("measurementUnit")}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus-ring"
-            >
-              <option value="km">Kilometers (km, km/h)</option>
-              <option value="mph">Miles (mi, mph)</option>
-            </select>
-          </div>
+          <Select
+            label="Speed & Distance Unit"
+            {...register("measurementUnit")}
+            sizeVariant="md"
+            options={[
+              { label: "Kilometers (km, km/h)", value: "km" },
+              { label: "Miles (mi, mph)", value: "mph" }
+            ]}
+          />
         </div>
 
         {/* Feature Permissions Checkboxes (Figma Frame 3) */}

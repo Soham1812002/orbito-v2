@@ -27,7 +27,7 @@ const REPORT_CATEGORIES = [
     id: "trip-summary",
     title: "Trip Summary",
     desc: "Distance, driving duration, and route summary",
-    path: "/reports/trip/summary",
+    path: "/reports/trip-summary",
     icon: Compass,
     badge: "DAILY"
   },
@@ -35,42 +35,43 @@ const REPORT_CATEGORIES = [
     id: "trip-details",
     title: "Trip Details",
     desc: "Turn-by-turn trajectory logs and timestamps",
-    path: "/reports/trip/details",
+    path: "/reports/trip-summary",
+    isDynamicDetail: true,
     icon: Layers
   },
   {
     id: "stoppage",
     title: "Stoppage Summary",
     desc: "Unplanned dwell times and parking duration",
-    path: "/reports/trip/stoppage",
+    path: "/reports/stoppage-summary",
     icon: Clock
   },
   {
     id: "idle",
     title: "Engine Idle Summary",
     desc: "Excessive fuel-wasting idle intervals",
-    path: "/reports/trip/idle",
+    path: "/reports/idle-summary",
     icon: Activity
   },
   {
     id: "work-hour",
-    title: "Work Hour Summary",
+    title: "Travel & Work Hour",
     desc: "Operating shift hours and driver duty times",
-    path: "/reports/trip/work-hour",
+    path: "/reports/travel-summary",
     icon: Calendar
   },
   {
-    id: "poi-summary",
-    title: "POI Summary A",
-    desc: "Point of Interest customer stop visits",
-    path: "/reports/poi/summary-a",
+    id: "vehicle-status",
+    title: "Vehicle Status Report",
+    desc: "Fleet movement state, telemetry, and heartbeats",
+    path: "/reports/vehicle-status",
     icon: MapPin
   },
   {
-    id: "missed-poi",
-    title: "Missed POI Summary",
-    desc: "Customer dispatch points that were skipped",
-    path: "/reports/poi/missed",
+    id: "vehicle-location",
+    title: "Location History",
+    desc: "Geographic coordinate checkpoints and zones",
+    path: "/reports/vehicle-location",
     icon: AlertCircle
   }
 ];
@@ -84,10 +85,14 @@ export const QuickReportsDrawer: React.FC<QuickReportsDrawerProps> = ({
 
   if (!isOpen || !vehicle) return null;
 
-  const handleOpenReport = (path: string, reportTitle?: string) => {
-    showToast.info(`Opening ${reportTitle || "Report"} for ${vehicle.plateNumber}`);
+  const handleOpenReport = (item: (typeof REPORT_CATEGORIES)[number]) => {
+    showToast.info(`Opening ${item.title} for ${vehicle.plateNumber}`);
     onClose();
-    navigate(`${path}?vehicle=${encodeURIComponent(vehicle.plateNumber)}`);
+    if (item.isDynamicDetail) {
+      navigate(`${item.path}/${encodeURIComponent(vehicle.id || vehicle.plateNumber)}`);
+    } else {
+      navigate(`${item.path}?vehicle=${encodeURIComponent(vehicle.plateNumber)}`);
+    }
   };
 
   return (
@@ -134,7 +139,7 @@ export const QuickReportsDrawer: React.FC<QuickReportsDrawerProps> = ({
           return (
             <button
               key={item.id}
-              onClick={() => handleOpenReport(item.path, item.title)}
+              onClick={() => handleOpenReport(item)}
               className="w-full text-left p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between group shadow-xs"
             >
               <div className="flex items-center gap-3 min-w-0">

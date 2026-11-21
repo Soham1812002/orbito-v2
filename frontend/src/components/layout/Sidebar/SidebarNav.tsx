@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { navigationSections, NavItemConfig, NavSubItemConfig } from "./navigation.config";
 import { AppIcon } from "@/components/common/icons/AppIcon";
 import { useAppSelector } from "@/redux/hooks";
 import { hasPermission } from "@/utils/permissions";
+import { systemConfigApi } from "@/api/systemConfig.api";
+import { auditLogApi } from "@/api/auditLog.api";
+import { appConfigApi } from "@/api/appConfig.api";
+import { reportsApi } from "@/api/reports.api";
 
 export interface SidebarNavProps {
   collapsed: boolean;
@@ -17,6 +22,47 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const location = useLocation();
   const { currentUser } = useAppSelector((state) => state.user);
+  const queryClient = useQueryClient();
+
+  // Instant Prefetch on Mouse Hover (Enterprise-grade 0ms instant loading)
+  const handlePrefetch = (path?: string) => {
+    if (!path) return;
+    try {
+      if (path.startsWith("/system-config/")) {
+        const moduleKey = path.replace("/system-config/", "").split("?")[0].split("/")[0];
+        if (moduleKey === "audit-log") {
+          queryClient.prefetchQuery({
+            queryKey: ["audit-logs", { page: 1, limit: 50, search: undefined, statusFilter: "ALL" }],
+            queryFn: ({ signal }) => auditLogApi.getAuditLogs({ page: 1, limit: 50 }, signal),
+            staleTime: 5 * 60 * 1000
+          });
+        } else if (moduleKey) {
+          queryClient.prefetchQuery({
+            queryKey: ["system-config", moduleKey],
+            queryFn: ({ signal }) => systemConfigApi.getConfigs(moduleKey, signal),
+            staleTime: 5 * 60 * 1000
+          });
+        }
+      } else if (path.startsWith("/app-config/")) {
+        const moduleKey = path.replace("/app-config/", "").split("?")[0].split("/")[0];
+        if (moduleKey) {
+          queryClient.prefetchQuery({
+            queryKey: ["app-config", moduleKey],
+            queryFn: () => appConfigApi.getConfigs(moduleKey),
+            staleTime: 5 * 60 * 1000
+          });
+        }
+      } else if (path === "/reports/scheduled") {
+        queryClient.prefetchQuery({
+          queryKey: ["reports", "scheduled"],
+          queryFn: () => reportsApi.getScheduledReports(),
+          staleTime: 5 * 60 * 1000
+        });
+      }
+    } catch {
+      // non-blocking prefetch failure
+    }
+  };
 
   // Track accordion expand states in expanded sidebar
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(() => {
@@ -154,6 +200,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                       >
                         <NavLink
                           to={item.path}
+                          onMouseEnter={() => handlePrefetch(item.path)}
+                          onPointerDown={() => handlePrefetch(item.path)}
                           onClick={() => {
                             setOpenSubmenus((prev) => ({ ...prev, [item.key]: true }));
                             if (onItemClick) onItemClick();
@@ -196,6 +244,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     ) : (
                       <NavLink
                         to={item.path}
+                        onMouseEnter={() => handlePrefetch(item.path)}
+                        onPointerDown={() => handlePrefetch(item.path)}
                         onClick={onItemClick}
                         className={({ isActive }) =>
                           `${
@@ -255,7 +305,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
                     {/* Level 1 Accordion in Expanded Sidebar */}
                     {!collapsed && hasChildren && isSubmenuOpen && (
-                      <div className="mt-1 pl-4 pr-1 space-y-0.5 border-l-2 border-slate-200 dark:border-[#1D293D] ml-5 animate-in slide-in-from-top-2 fade-in duration-200">
+                      <div className="mt-1 pl-4 pr-1 space-y-0.5 border-l-2 border-slate-200 dark:border-[#1D293D] ml-5">
                         {item.children?.map((subItem) => {
                           const SubIcon = subItem.icon;
                           const isSubActive = location.pathname === subItem.path;
@@ -264,11 +314,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                             <NavLink
                               key={subItem.key}
                               to={subItem.path}
+                              onMouseEnter={() => handlePrefetch(subItem.path)}
+                              onPointerDown={() => handlePrefetch(subItem.path)}
                               onClick={onItemClick}
-                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                                 isSubActive
-                                  ? "bg-blue-50 text-blue-600 border border-blue-200 font-semibold dark:bg-blue-600/20 dark:text-blue-400 dark:border-blue-500/30"
-                                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D]/50"
+                                  ? "bg-blue-50 text-blue-600 border-blue-200 font-semibold dark:bg-blue-600/20 dark:text-blue-400 dark:border-blue-500/30"
+                                  : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#1D293D]/50"
                               }`}
                             >
                               <div className="flex items-center gap-2 truncate">
@@ -334,11 +386,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                                 <NavLink
                                   key={subItem.key}
                                   to={subItem.path}
+                                  onMouseEnter={() => handlePrefetch(subItem.path)}
+                                  onPointerDown={() => handlePrefetch(subItem.path)}
                                   onClick={() => {
                                     setActiveFlyout(null);
                                     onItemClick?.();
                                   }}
-                                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
                                     isSubActive
                                       ? "bg-blue-600 text-white font-semibold shadow-sm shadow-blue-500/30"
                                       : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1D293D] hover:text-slate-900 dark:hover:text-white"

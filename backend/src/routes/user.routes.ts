@@ -13,12 +13,12 @@ const router = Router();
 router.use(authenticate);
 
 // User Groups
-router.get("/groups/export", UserGroupController.export);
-router.get("/groups/:id", UserGroupController.getById);
-router.get("/groups", UserGroupController.list);
+router.get("/groups/export", checkPermissions([PERMISSIONS.VIEW_USER]), UserGroupController.export);
+router.get("/groups/:id", checkPermissions([PERMISSIONS.VIEW_USER]), UserGroupController.getById);
+router.get("/groups", checkPermissions([PERMISSIONS.VIEW_USER]), UserGroupController.list);
 router.post(
   "/groups",
-  checkPermissions([PERMISSIONS.UPDATE_USER]),
+  checkPermissions([PERMISSIONS.CREATE_USER]),
   validateDto(CreateUserGroupDto),
   UserGroupController.create
 );

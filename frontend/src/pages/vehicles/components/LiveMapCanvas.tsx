@@ -25,11 +25,126 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
   selectedVehicleId,
   onSelectVehicle,
   styleUrl = MAP_CONFIG.styles.dark,
-  showGeofences = true
+  showGeofences = true,
+  showTraffic = false
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const vehiclesRef = useRef<VehicleTelemetry[]>(vehicles);
+  vehiclesRef.current = vehicles;
+  const prevSelectedVehicleIdRef = useRef<string | undefined>(undefined);
+
+  const ensureSpatialLayers = (map: maplibregl.Map) => {
+    if (!map.isStyleLoaded()) return;
+
+    // 1. Geofence Depot Sample Layer
+    if (!map.getSource("geofence-sample")) {
+      map.addSource("geofence-sample", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [77.200, 28.610],
+                [77.225, 28.610],
+                [77.225, 28.625],
+                [77.200, 28.625],
+                [77.200, 28.610]
+              ]
+            ]
+          },
+          properties: { name: "Central NCR Logistics Hub" }
+        }
+      });
+
+      map.addLayer({
+        id: "geofence-fill",
+        type: "fill",
+        source: "geofence-sample",
+        paint: {
+          "fill-color": "#2563EB",
+          "fill-opacity": 0.15
+        },
+        layout: {
+          visibility: showGeofences ? "visible" : "none"
+        }
+      });
+
+      map.addLayer({
+        id: "geofence-line",
+        type: "line",
+        source: "geofence-sample",
+        paint: {
+          "line-color": "#3B82F6",
+          "line-width": 2,
+          "line-dasharray": [3, 2]
+        },
+        layout: {
+          visibility: showGeofences ? "visible" : "none"
+        }
+      });
+    }
+
+    // 2. National Highway Traffic Flow Sample Layer
+    if (!map.getSource("traffic-sample")) {
+      map.addSource("traffic-sample", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: {
+                type: "LineString",
+                coordinates: [
+                  [77.209, 28.6139],
+                  [77.260, 28.5800],
+                  [77.340, 28.5200],
+                  [77.400, 28.4500]
+                ]
+              },
+              properties: { level: "moderate" }
+            },
+            {
+              type: "Feature",
+              geometry: {
+                type: "LineString",
+                coordinates: [
+                  [77.400, 28.4500],
+                  [77.450, 28.3800],
+                  [77.520, 28.3000]
+                ]
+              },
+              properties: { level: "heavy" }
+            }
+          ]
+        }
+      });
+
+      map.addLayer({
+        id: "traffic-flow-line",
+        type: "line",
+        source: "traffic-sample",
+        paint: {
+          "line-color": [
+            "match",
+            ["get", "level"],
+            "heavy", "#EF4444",
+            "moderate", "#F59E0B",
+            "#10B981"
+          ],
+          "line-width": 4,
+          "line-opacity": 0.75
+        },
+        layout: {
+          visibility: showTraffic ? "visible" : "none"
+        }
+      });
+    }
+  };
 
   // Initialize MapLibre GL Map
   useEffect(() => {
@@ -54,49 +169,12 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
     map.on("load", () => {
-      // Add sample Geofence polygon overlay (Yamuna Expressway Depot)
-      if (!map.getSource("geofence-sample")) {
-        map.addSource("geofence-sample", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: [
-                [
-                  [77.200, 28.610],
-                  [77.225, 28.610],
-                  [77.225, 28.625],
-                  [77.200, 28.625],
-                  [77.200, 28.610]
-                ]
-              ]
-            },
-            properties: { name: "Central NCR Logistics Hub" }
-          }
-        });
+      ensureSpatialLayers(map);
+    });
 
-        map.addLayer({
-          id: "geofence-fill",
-          type: "fill",
-          source: "geofence-sample",
-          paint: {
-            "fill-color": "#2563EB",
-            "fill-opacity": 0.15
-          }
-        });
-
-        map.addLayer({
-          id: "geofence-line",
-          type: "line",
-          source: "geofence-sample",
-          paint: {
-            "line-color": "#3B82F6",
-            "line-width": 2,
-            "line-dasharray": [3, 2]
-          }
-        });
-      }
+    // Re-attach spatial layers whenever map style finishes loading
+    map.on("styledata", () => {
+      ensureSpatialLayers(map);
     });
 
     mapRef.current = map;
@@ -124,15 +202,26 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
 
   // Toggle Geofence layer visibility
   useEffect(() => {
-    if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
     const visibility = showGeofences ? "visible" : "none";
-    if (mapRef.current.getLayer("geofence-fill")) {
-      mapRef.current.setLayoutProperty("geofence-fill", "visibility", visibility);
+    if (map.getLayer("geofence-fill")) {
+      map.setLayoutProperty("geofence-fill", "visibility", visibility);
     }
-    if (mapRef.current.getLayer("geofence-line")) {
-      mapRef.current.setLayoutProperty("geofence-line", "visibility", visibility);
+    if (map.getLayer("geofence-line")) {
+      map.setLayoutProperty("geofence-line", "visibility", visibility);
     }
   }, [showGeofences]);
+
+  // Toggle Traffic layer visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const visibility = showTraffic ? "visible" : "none";
+    if (map.getLayer("traffic-flow-line")) {
+      map.setLayoutProperty("traffic-flow-line", "visibility", visibility);
+    }
+  }, [showTraffic]);
 
   // Update vehicle markers
   useEffect(() => {
@@ -165,18 +254,18 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
         el.style.height = "40px";
 
         el.innerHTML = `
-          <div class="relative flex items-center justify-center w-10 h-10 rounded-full shadow-lg border-2 ${
-            isSelected ? "border-white ring-4 ring-blue-500/50 scale-125" : "border-slate-800"
+          <div class="marker-disc relative flex items-center justify-center w-10 h-10 rounded-full shadow-lg border-2 transition-all duration-200 ${
+            isSelected ? "border-white ring-4 ring-blue-500/50 scale-125 z-10" : "border-slate-800"
           }" style="background-color: ${statusColor}">
-            <div class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[10px] border-b-white transition-transform duration-300" 
+            <div class="marker-arrow w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[10px] border-b-white transition-transform duration-300"
                  style="transform: rotate(${vehicle.heading}deg)"></div>
             ${
               vehicle.status === "moving"
-                ? '<span class="absolute -top-1 -right-1 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>'
+                ? '<span class="moving-ping absolute -top-1 -right-1 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>'
                 : ""
             }
           </div>
-          <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider text-white shadow-md ${
+          <div class="marker-badge absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider text-white shadow-md ${
             isSelected ? "bg-blue-600" : "bg-slate-900/90"
           }">
             ${vehicle.plateNumber.split(" ")[0] || "VEH"}
@@ -185,7 +274,8 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
 
         el.addEventListener("click", (e) => {
           e.stopPropagation();
-          onSelectVehicle(vehicle);
+          const latestVeh = vehiclesRef.current.find((v) => v.id === vehicle.id) || vehicle;
+          onSelectVehicle(latestVeh);
         });
 
         marker = new maplibregl.Marker({ element: el })
@@ -197,13 +287,23 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
         // Smoothly update marker coordinates and rotation
         marker.setLngLat([vehicle.longitude, vehicle.latitude]);
         const el = marker.getElement();
-        const arrow = el.querySelector("div > div");
-        if (arrow) {
-          (arrow as HTMLElement).style.transform = `rotate(${vehicle.heading}deg)`;
+
+        const disc = el.querySelector(".marker-disc") as HTMLElement | null;
+        if (disc) {
+          disc.className = `marker-disc relative flex items-center justify-center w-10 h-10 rounded-full shadow-lg border-2 transition-all duration-200 ${
+            isSelected ? "border-white ring-4 ring-blue-500/50 scale-125 z-10" : "border-slate-800"
+          }`;
+          disc.style.backgroundColor = statusColor;
         }
-        const badge = el.querySelector(".whitespace-nowrap");
+
+        const arrow = el.querySelector(".marker-arrow") as HTMLElement | null;
+        if (arrow) {
+          arrow.style.transform = `rotate(${vehicle.heading}deg)`;
+        }
+
+        const badge = el.querySelector(".marker-badge") as HTMLElement | null;
         if (badge) {
-          badge.className = `absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider text-white shadow-md ${
+          badge.className = `marker-badge absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider text-white shadow-md ${
             isSelected ? "bg-blue-600" : "bg-slate-900/90"
           }`;
         }
@@ -219,11 +319,17 @@ export const LiveMapCanvas: React.FC<LiveMapCanvasProps> = ({
     });
   }, [vehicles, selectedVehicleId, onSelectVehicle]);
 
-  // Fly to selected vehicle
+  // Fly to selected vehicle only when selection changes
   useEffect(() => {
-    if (!mapRef.current || !selectedVehicleId) return;
+    if (!mapRef.current || !selectedVehicleId) {
+      prevSelectedVehicleIdRef.current = selectedVehicleId;
+      return;
+    }
+    if (prevSelectedVehicleIdRef.current === selectedVehicleId) return;
+
     const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
     if (vehicle) {
+      prevSelectedVehicleIdRef.current = selectedVehicleId;
       mapRef.current.flyTo({
         center: [vehicle.longitude, vehicle.latitude],
         zoom: 14,

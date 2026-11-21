@@ -47,8 +47,8 @@ export const LiveTrackingPage: React.FC = () => {
   const [immobilizeTarget, setImmobilizeTarget] = useState<VehicleTelemetry | null>(null);
   const [shareTarget, setShareTarget] = useState<VehicleTelemetry | null>(null);
 
-  // Telematics Query (polls every refreshInterval ms)
-  const { data: vehicles = [], refetch, isFetching } = useVehicles(undefined, refreshInterval);
+  // Telematics Query (polls every refreshInterval ms for up to 1000 live assets)
+  const { data: vehicles = [], refetch, isFetching } = useVehicles({ limit: 1000 }, refreshInterval);
   const immobilizerMutation = useSendImmobilizerCommand();
   const shareLinkMutation = useCreateShareLink();
 
@@ -76,12 +76,11 @@ export const LiveTrackingPage: React.FC = () => {
     <div className="space-y-4">
       <PageHeader
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
           { label: "Vehicles", href: "/vehicles" },
           { label: "Live Tracking" }
         ]}
         title="Live Fleet Telematics"
-        description="High-frequency 60 FPS GPU vector map tracking 25 commercial logistics assets across India."
+        description={`High-frequency 60 FPS GPU vector map tracking ${vehicles.length} commercial logistics assets across India.`}
         actions={
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300">

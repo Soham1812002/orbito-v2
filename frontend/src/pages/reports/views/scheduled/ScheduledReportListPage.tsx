@@ -30,26 +30,37 @@ export const ScheduledReportListPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleToggleActive = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isActive: !item.isActive } : item
-      )
-    );
-    toast.success("Schedule status updated");
+  const handleToggleActive = async (id: string) => {
+    try {
+      await reportsApi.toggleScheduledReport(id);
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, isActive: !item.isActive } : item
+        )
+      );
+      toast.success("Schedule status updated");
+    } catch {
+      toast.error("Failed to update status");
+    }
   };
 
   const handleRunNow = (name: string) => {
     toast.success(`Triggered report delivery for "${name}"!`);
   };
 
-  const handleDelete = (id: string, name: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    toast.success(`Schedule "${name}" deleted`);
+  const handleDelete = async (id: string, name: string) => {
+    try {
+      await reportsApi.deleteScheduledReport(id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      toast.success(`Schedule "${name}" deleted`);
+    } catch {
+      toast.error("Failed to delete schedule");
+    }
   };
 
-  const handleCreated = (newSchedule: ScheduledReportItem) => {
-    setItems((prev) => [newSchedule, ...prev]);
+  const handleCreated = async (newSchedule: ScheduledReportItem) => {
+    await loadData();
+    setIsModalOpen(false);
   };
 
   const filteredItems = items.filter(

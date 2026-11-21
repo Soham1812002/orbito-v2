@@ -51,3 +51,36 @@ export async function downloadStreamFile(
     throw error;
   }
 }
+
+/**
+ * Triggers a browser download of client-side tabular data as a formatted CSV file.
+ * Properly escapes internal quotes and revokes object URLs to prevent memory leaks.
+ */
+export function exportToCsv(
+  filename: string,
+  headers: string[],
+  rows: (string | number | boolean | null | undefined)[][]
+): void {
+  const csvContent = [
+    headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(","),
+    ...rows.map((row) =>
+      row
+        .map((cell) => {
+          if (cell === null || cell === undefined) return '""';
+          const str = String(cell).replace(/"/g, '""');
+          return `"${str}"`;
+        })
+        .join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.setAttribute("download", `${filename}_${Date.now()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+}

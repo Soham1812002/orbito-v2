@@ -14,13 +14,14 @@ import { AppDataTable } from "@/components/common/AppDataTable";
 import { TableFilterBar } from "@/components/common/TableFilterBar";
 import type { ColDef } from "ag-grid-community";
 import { showToast } from "@/lib/toast";
+import { exportToCsv } from "@/utils/streamingExport";
 import { auditLogApi, AuditLogItem } from "@/api/auditLog.api";
 
 export const AuditLogPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
-  const pageSize = 50;
+  const [pageSize, setPageSize] = useState(50);
 
   // Query audit logs directly from backend PostgreSQL API
   const { data, isLoading, isFetching, refetch } = useQuery({
@@ -35,11 +36,14 @@ export const AuditLogPage: React.FC = () => {
         },
         signal
       ),
-    staleTime: 30000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData
   });
 
   const logs: AuditLogItem[] = data?.rows || [];
   const totalCount = data?.total || 0;
+  const totalPages = data?.totalPages || Math.ceil(totalCount / pageSize) || 1;
 
   // Real Metric Counters from query results
   const metrics = useMemo(() => {
@@ -62,21 +66,19 @@ export const AuditLogPage: React.FC = () => {
       showToast.error("No audit logs to export");
       return;
     }
-    const headers = "ID,Timestamp,User,Role,Action,Module,IP Address,Status,Details";
-    const rows = logs.map(
-      (l) =>
-        `"${l.id}","${l.timestamp}","${(l.userName || "").replace(/"/g, '""')}","${(l.userRole || "").replace(/"/g, '""')}","${l.action}","${(l.module || "").replace(/"/g, '""')}","${l.ipAddress}","${l.status}","${(l.details || "").replace(/"/g, '""')}"`
-    );
-    const csvContent = [headers, ...rows].join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `audit-log-${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const headers = ["ID", "Timestamp", "User", "Role", "Action", "Module", "IP Address", "Status", "Details"];
+    const rows = logs.map((l) => [
+      l.id,
+      l.timestamp,
+      l.userName || "",
+      l.userRole || "",
+      l.action,
+      l.module || "",
+      l.ipAddress,
+      l.status,
+      l.details || ""
+    ]);
+    exportToCsv("audit_log", headers, rows);
     showToast.success("Audit log export downloaded successfully!");
   };
 
@@ -210,26 +212,90 @@ export const AuditLogPage: React.FC = () => {
         description="Review user activity, configuration changes, access events, and operational records across your fleet workspace."
       />
 
-      {/* Metric Counters Strip */}
+      {/* Metric Counters Strip with Smooth Cross-Fade */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Recorded</p>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-1">{metrics.total}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-slate-200/80 dark:bg-slate-700/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-slate-900 dark:text-white transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {metrics.total}
+            </h3>
+          </div>
           <span className="text-[10px] text-blue-500 font-semibold mt-1 inline-block">PostgreSQL Audit Trail</span>
         </div>
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Successful</p>
-          <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{metrics.successCount}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-emerald-100/80 dark:bg-emerald-950/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-emerald-600 dark:text-emerald-400 transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {metrics.successCount}
+            </h3>
+          </div>
           <span className="text-[10px] text-slate-400 font-medium mt-1 inline-block">{metrics.rate}% success rate</span>
         </div>
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Alerts & Warnings</p>
-          <h3 className="text-xl font-bold text-amber-500 mt-1">{metrics.warningCount}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-amber-100/80 dark:bg-amber-950/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-amber-500 transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {metrics.warningCount}
+            </h3>
+          </div>
           <span className="text-[10px] text-amber-500 font-medium mt-1 inline-block">Operational review</span>
         </div>
         <div className="panel-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Failed Events</p>
-          <h3 className="text-xl font-bold text-rose-500 mt-1">{metrics.failedCount}</h3>
+          <div className="h-7 flex items-center mt-1 relative">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 flex items-center transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <span className="w-9 h-5 bg-rose-100/80 dark:bg-rose-950/60 rounded animate-pulse" />
+            </span>
+            <h3
+              className={`text-xl font-bold text-rose-500 transition-opacity duration-300 ease-out ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {metrics.failedCount}
+            </h3>
+          </div>
           <span className="text-[10px] text-rose-500 font-medium mt-1 inline-block">Security flag check</span>
         </div>
       </div>
@@ -257,7 +323,12 @@ export const AuditLogPage: React.FC = () => {
           total={totalCount}
           page={page}
           pageSize={pageSize}
+          totalPages={totalPages}
           onPageChange={(p) => setPage(p)}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
         />
       </div>
     </div>

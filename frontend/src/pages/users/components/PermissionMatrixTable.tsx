@@ -19,6 +19,18 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
       if (p.id === id) {
         const nextVal = !p[field];
         const next = { ...p, [field]: nextVal };
+
+        // Logical RBAC Rule: Active action requires View; Unchecking View disables all actions
+        if (field !== "view" && nextVal === true) {
+          next.view = true;
+        } else if (field === "view" && nextVal === false) {
+          next.add = false;
+          next.edit = false;
+          next.delete = false;
+          next.export = false;
+          next.control = false;
+        }
+
         // Recalculate access level
         if (next.view && next.add && next.edit && next.delete && next.export && next.control) {
           next.accessLevel = "full" as const;
@@ -81,6 +93,18 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
     const nextVal = !allChecked;
     const updated = permissions.map((p) => {
       const next = { ...p, [field]: nextVal };
+
+      // Logical RBAC Rule: Active action requires View; Unchecking View disables all actions
+      if (field !== "view" && nextVal === true) {
+        next.view = true;
+      } else if (field === "view" && nextVal === false) {
+        next.add = false;
+        next.edit = false;
+        next.delete = false;
+        next.export = false;
+        next.control = false;
+      }
+
       if (next.view && next.add && next.edit && next.delete && next.export && next.control) {
         next.accessLevel = "full" as const;
       } else if (next.view && !next.add && !next.edit && !next.delete && !next.control) {

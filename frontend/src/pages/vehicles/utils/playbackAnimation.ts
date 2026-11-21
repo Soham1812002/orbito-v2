@@ -17,6 +17,24 @@ export function interpolateCoordinates(
  * Interpolate heading angle along the shortest angular distance.
  * Handles 360-degree boundary wrap-around smoothly (e.g. 355° -> 5°).
  */
+/**
+ * Calculate forward bearing / direction between two [longitude, latitude] coordinates in degrees.
+ * (0 = North, 90 = East, 180 = South, 270 = West)
+ */
+export function calculateBearing(
+  coord1: [number, number],
+  coord2: [number, number]
+): number {
+  const dLng = coord2[0] - coord1[0];
+  const dLat = coord2[1] - coord1[1];
+  if (Math.abs(dLng) < 1e-7 && Math.abs(dLat) < 1e-7) {
+    return NaN;
+  }
+  const angleRad = Math.atan2(dLng, dLat);
+  const angleDeg = (angleRad * 180) / Math.PI;
+  return Math.round((angleDeg + 360) % 360);
+}
+
 export function interpolateHeading(h1: number, h2: number, fraction: number): number {
   const diff = ((h2 - h1 + 540) % 360) - 180;
   const interpolated = (h1 + diff * fraction + 360) % 360;
@@ -78,8 +96,26 @@ export function getInterpolatedVehicleState(
     [p2.longitude, p2.latitude],
     fraction
   );
-  const heading = interpolateHeading(p1.heading, p2.heading, fraction);
+  const roadBearing = calculateBearing(
+    [p1.longitude, p1.latitude],
+    [p2.longitude, p2.latitude]
+  );
+  const heading = isNaN(roadBearing)
+    ? interpolateHeading(p1.heading, p2.heading, fraction)
+    : roadBearing;
   const speed = Math.round(p1.speed + (p2.speed - p1.speed) * fraction);
+
+  let timestamp = fraction < 0.5 ? p1.timestamp : p2.timestamp;
+  try {
+    const t1 = new Date(p1.timestamp).getTime();
+    const t2 = new Date(p2.timestamp).getTime();
+    if (!isNaN(t1) && !isNaN(t2) && t2 >= t1) {
+      const interpolatedMs = t1 + (t2 - t1) * fraction;
+      timestamp = new Date(interpolatedMs).toISOString();
+    }
+  } catch {
+    timestamp = fraction < 0.5 ? p1.timestamp : p2.timestamp;
+  }
 
   return {
     position,
@@ -88,7 +124,7 @@ export function getInterpolatedVehicleState(
     ignition: fraction < 0.5 ? p1.ignition : p2.ignition,
     stoppage: fraction < 0.5 ? p1.stoppage : p2.stoppage,
     locationName: fraction < 0.5 ? p1.locationName : p2.locationName,
-    timestamp: fraction < 0.5 ? p1.timestamp : p2.timestamp
+    timestamp
   };
 }
 
@@ -114,9 +150,19 @@ export function splitRouteCoordinates(
   // Traversed includes points from 0 up to index, plus current interpolated position
   const traversed = allCoords.slice(0, index + 1);
   traversed.push(currentPosition);
+  if (traversed.length < 2 && allCoords.length >= 2) {
+    traversed.push(allCoords[1]);
+  } else if (traversed.length < 2) {
+    traversed.push(currentPosition);
+  }
 
   // Remaining starts from current interpolated position through end of route
   const remaining = [currentPosition, ...allCoords.slice(index + 1)];
+  if (remaining.length < 2 && allCoords.length >= 2) {
+    remaining.push(allCoords[allCoords.length - 1]);
+  } else if (remaining.length < 2) {
+    remaining.push(currentPosition);
+  }
 
   return { traversed, remaining };
 }
